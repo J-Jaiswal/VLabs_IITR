@@ -1,0 +1,110 @@
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(to bottom right, #ebf5ff, #ffffff, #f7fafc);
+  color: #333;
+}
+
+.container {
+  display: flex;
+  height: 100vh;
+}
+
+.sidebar {
+  width: 18%;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(6px);
+  padding: 10px 10px 30px 20px;
+  border-right: 1px solid #ddd;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar h2 {
+  color: #2563eb;
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.model-info p {
+  font-size: 14px;
+  margin: 4px 0;
+  font-weight: 500;
+}
+
+.inputs {
+  margin-top: 20px;
+}
+
+.inputs label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.inputs input {
+  width: 80%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+.blue-btn,
+.green-btn {
+  padding: 12px;
+  margin-top: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+  font-size: 14px;
+}
+
+.blue-btn {
+  width: 85%;
+  margin-top: 20px;
+  background-color: #2563eb;
+  color: white;
+}
+
+.blue-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.green-btn {
+  width: 85%;
+  background-color: #16a34a;
+  color: white;
+}
+
+.green-btn:hover {
+  background-color: #15803d;
+}
+.plot-area {
+  flex-grow: 1;
+  /* width: 100%; */
+  padding: 10px 20px; /* Balanced left/right padding */
+  background: linear-gradient(to bottom, #ffffff, #e8f0fc, #ffffff);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center plots horizontally */
+}
+
+.plot-area .plot {
+  margin-bottom: 40px;
+}
+
+.plot-area .plot:last-child {
+  margin-bottom: 0;
+}
+
+.plot-area text {
+  font-weight: 400 !important;
+  font-size: 14px;
+}

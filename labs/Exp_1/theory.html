@@ -1,0 +1,464 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Virtual Labs</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      name="viewport"
+    />
+    <!-- Bootstrap 3.3.6 -->
+    <link rel="stylesheet" href="../../bootstrap/css/bootstrap.css" />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css"
+    />
+    <!-- Theme style -->
+    <link rel="stylesheet" href="../../dist/css/AdminLTE.css" />
+    <!-- AdminLTE Skins. Choose a skin from the css/skins folder instead of downloading all of them to reduce the load. -->
+    <link rel="stylesheet" href="../../dist/css/skins/_all-skins.min.css" />
+    <script>
+      window.onload = function () {
+        document.getElementById("theory").className = "active treeview";
+      };
+    </script>
+    <style>
+      #toggle_nav:hover {
+        background-color: #1261a0;
+      }
+      #aim {
+        background-color: #009dff;
+      }
+      #aim:hover,
+      #theory:hover,
+      #pretest:hover,
+      #procedure:hover,
+      #simulation:hover,
+      #result:hover,
+      #posttest:hover,
+      #references:hover {
+        background-color: #009dff;
+      }
+    </style>
+  </head>
+
+  <body class="hold-transition skin-blue sidebar-mini">
+    <!--Navigation Bar-->
+    <div class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <button
+            type="button"
+            class="navbar-toggle"
+            data-toggle="collapse"
+            data-target="#navbar-ex-collapse"
+          >
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="http://iitb.ac.in"
+            ><span
+              ><img
+                src="images/iitrLogo.png"
+                style="margin-top: -15px; height: 50px; width: 400px" /></span
+          ></a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-ex-collapse"></div>
+      </div>
+    </div>
+
+    <div class="wrapper">
+      <header class="main-header">
+        <!-- Logo -->
+        <a
+          href="../index.html"
+          class="logo"
+          style="
+            background-color: #009dff;
+            border-right: solid;
+            border-right-color: #1261a0;
+          "
+        >
+          <p align="center" style="font-size: 1em"><b>Geophysics Lab</b></p>
+        </a>
+        <!-- Header Navbar: style can be found in header.less -->
+        <nav class="navbar navbar-static-top" style="background-color: #009dff">
+          <!-- Sidebar toggle button-->
+          <a
+            href="#"
+            class="sidebar-toggle"
+            data-toggle="offcanvas"
+            role="button"
+            id="toggle_nav"
+          >
+            <span class="sr-only">Toggle navigation</span>
+          </a>
+          <section class="content-header">
+            <ol class="breadcrumb">
+              <li>
+                <a href="../index.html"
+                  ><i class="fa fa-dashboard"></i>Geophysics Lab</a
+                >
+              </li>
+              <li>
+                <a href="#"
+                  >Synthetic Seismogram Generation using focal mechanism</a
+                >
+              </li>
+            </ol>
+          </section>
+        </nav>
+      </header>
+
+      <!-- Left side column. contains the logo and sidebar -->
+      <aside class="main-sidebar" style="background-color: #1261a0">
+        <!-- sidebar: style can be found in sidebar.less -->
+        <section class="sidebar">
+          <!-- search form -->
+          <form action="#" method="get" class="sidebar-form">
+            <div class="input-group"></div>
+          </form>
+          <!-- /.sear ch form -->
+          <!-- sidebar menu: : style can be found in sidebar.less -->
+          <ul class="sidebar-menu" style="background-color: #1261a0">
+            <li class="treeview" id="aim">
+              <a href="index.html" id="aim">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Aim</span>
+              </a>
+            </li>
+            <li class="treeview" id="theory">
+              <a href="theory.html" id="theory" onclick="theory()">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Theory</span>
+              </a>
+            </li>
+            <!--   <li class="treeview" id="numerical">
+                    <a href="numerical.php">
+                        <i class="fa fa-laptop"></i>
+                        <span>Numerical</span>
+                        <span class="pull-right-container">
+                        </span>
+                    </a>
+                </li>
+                <li class="treeview" id="program">
+                    <a href="program.php">
+                        <i class="fa fa-laptop"></i>
+                        <span>Program</span>
+                        <span class="pull-right-container">
+                        </span>
+                    </a>
+                </li> -->
+            <li class="treeview" id="pretest">
+              <a href="pretest.html" id="pretest">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Pre Test</span>
+              </a>
+            </li>
+
+            <li class="treeview" id="procedure">
+              <a href="procedure.html" id="procedure">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Procedure</span>
+              </a>
+            </li>
+            <li class="treeview" id="simulation">
+              <a href="simulation.html" id="simulation">
+                <i class="fa fa-laptop" style="color: white"></i>
+                <span style="color: white">Simulation</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+
+            <li class="treeview" id="posttest">
+              <a href=" posttest.html" id="posttest">
+                <i class="fa fa-files-o" style="color: white"> </i>
+                <span style="color: white">Post Test</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+            <li class="treeview" id="ref">
+              <a href="references.html" id="references">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">References</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+          </ul>
+        </section>
+        <!-- /.sidebar -->
+      </aside>
+
+      <div class="content-wrapper">
+        <section class="content-header">
+          <h1 align="center">
+            Synthetic Seismogram Generation using Focal Mechanism
+          </h1>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+          <h4>1. Seismic Moment Tensor</h4>
+          <p>
+            A <strong>moment tensor</strong> is a 3×3 matrix that describes the
+            internal forces and deformation associated with an earthquake
+            source. It generalizes the concept of a force couple, capturing
+            different types of fault motion such as:
+          </p>
+          <ul>
+            <li><strong>Strike-slip</strong> – horizontal shearing motion</li>
+            <li><strong>Normal</strong> – downward motion of hanging wall</li>
+            <li><strong>Reverse</strong> – upward motion of hanging wall</li>
+          </ul>
+          <p>These motions are described using three geometric angles:</p>
+          <ul>
+            <li>
+              <strong>Strike (ϕ):</strong> The angle between the fault trace and
+              north.
+            </li>
+            <li>
+              <strong>Dip (δ):</strong> The angle between the fault plane and
+              horizontal surface.
+            </li>
+            <li>
+              <strong>Rake (λ):</strong> The direction of slip along the fault
+              plane.
+            </li>
+          </ul>
+          <p>
+            The scalar seismic moment <em>M₀</em> is a measure of earthquake
+            size, calculated from moment magnitude <em>M<sub>w</sub></em> as:
+          </p>
+          <pre><code>M₀ = 10^(1.5 × Mw + 9.1)</code></pre>
+          <p>Units: Newton-meters (Nm)</p>
+
+          <h4>Azimuth Angle (θ)</h4>
+          <p>
+            The <strong>azimuth angle</strong> in seismology is the angle
+            measured clockwise from geographic North to the direction pointing
+            from the earthquake source (hypocenter) to the seismic station
+            (receiver), expressed in degrees.
+          </p>
+          <ul>
+            <li><strong>0°</strong> → North</li>
+            <li><strong>90°</strong> → East</li>
+            <li><strong>180°</strong> → South</li>
+            <li><strong>270°</strong> → West</li>
+          </ul>
+          <p>
+            Azimuth plays a critical role in waveform synthesis because seismic
+            wave radiation patterns vary with direction. For example:
+          </p>
+          <ul>
+            <li>Transverse wave polarity flips at certain azimuths.</li>
+            <li>Amplitude varies due to radiation lobes from the fault.</li>
+          </ul>
+          <p>
+            In moment tensor-based simulation, azimuth enters the equations via
+            terms like <code>cos(ϕ)</code>, <code>sin(ϕ)</code>,
+            <code>cos(2ϕ)</code>, and <code>sin(2ϕ)</code> — shaping the
+            contribution of each Green's function.
+          </p>
+
+          <h4>2. Moment Tensor Components</h4>
+          <p>
+            The moment tensor contains six independent components due to
+            symmetry. These are named based on their directional contributions:
+          </p>
+          <ul>
+            <li>
+              <strong>Mrr:</strong> Radial-Radial (vertical compression or
+              tension).
+            </li>
+            <li>
+              <strong>Mtt:</strong> Transverse-Transverse (horizontal shear
+              parallel to strike).
+            </li>
+            <li>
+              <strong>Mpp:</strong> Perpendicular-Perpendicular (horizontal
+              tension perpendicular to fault).
+            </li>
+            <li>
+              <strong>Mrp:</strong> Radial-Perpendicular (dip-slip motion)
+            </li>
+            <li>
+              <strong>Mtp:</strong> Transverse-Perpendicular (strike-slip
+              motion).
+            </li>
+            <li>
+              <strong>Mrt:</strong> Radial-Transverse (shear in vertical plane)
+            </li>
+          </ul>
+          <p>
+            These are computed from strike, dip, rake, and seismic moment using:
+          </p>
+          <pre><code>
+Mrr = -M₀ [sin(δ)cos(λ)sin(2ϕ) + sin(2δ)sin(λ)sin²(ϕ)]
+Mtt =  M₀ [sin(δ)cos(λ)sin(2ϕ) - sin(2δ)sin(λ)cos²(ϕ)]
+Mpp =  M₀ sin(2δ) sin(λ)
+Mrp = -M₀ [cos(δ)cos(λ)cos(ϕ) + cos(2δ)sin(λ)sin(ϕ)]
+Mtp = -M₀ [cos(δ)cos(λ)sin(ϕ) - cos(2δ)sin(λ)cos(ϕ)]
+Mrt = -M₀ [sin(δ)cos(λ)cos(2ϕ) + ½ sin(2δ)sin(λ)sin(2ϕ)]
+</code></pre>
+
+          <h4>3. Green’s Functions</h4>
+          <p>
+            <strong>Green’s functions</strong> represent the Earth’s impulse
+            response to a unit source. When convolved with a moment tensor, they
+            produce synthetic seismograms. These are precomputed for specific
+            Earth models (e.g., <code>ak135</code>).
+          </p>
+          <p>They differ by wave type and direction:</p>
+          <ul>
+            <li>
+              <strong>ZSS:</strong> Vertical response to strike-slip source
+            </li>
+            <li>
+              <strong>ZDD:</strong> Vertical response to dip-slip
+              (double-couple) source
+            </li>
+            <li>
+              <strong>ZEP:</strong> Vertical response to explosive (isotropic)
+              source
+            </li>
+            <li>
+              <strong>ZDS:</strong> Vertical response to dip-strike interaction
+            </li>
+            <li><strong>RSS:</strong> Radial response to strike-slip</li>
+            <li><strong>RDD:</strong> Radial response to dip-slip</li>
+            <li><strong>REP:</strong> Radial response to explosion</li>
+            <li>
+              <strong>RDS:</strong> Radial response to dip-strike interaction
+            </li>
+            <li><strong>TSS:</strong> Transverse response to strike-slip</li>
+            <li><strong>TDS:</strong> Transverse response to dip-strike</li>
+          </ul>
+          <p>
+            Each Green’s function component correlates with a particular motion
+            pattern or source type. They form the building blocks for seismic
+            waveforms.
+          </p>
+
+          <h4>4. Waveform Synthesis via Convolution</h4>
+          <p>
+            The final waveform is a sum of weighted Green’s functions using
+            moment tensor components:
+          </p>
+          <pre><code>u(t) = Σ Mi · Gi(t)</code></pre>
+          <ul>
+            <li><strong>u(t):</strong> Output waveform for a given time t</li>
+            <li>
+              <strong>Mi:</strong> Moment tensor component (e.g., Mrr, Mrp)
+            </li>
+            <li>
+              <strong>Gi(t):</strong> Green’s function associated with that
+              component.
+            </li>
+          </ul>
+          <p>
+            Trigonometric terms like <code>cos(2ϕ)</code>,
+            <code>sin(ϕ)</code> encode the azimuthal dependence of each
+            component.
+          </p>
+
+          <h4>5. Synthetic Waveform Equations</h4>
+          <h5>Vertical (Z):</h5>
+          <pre><code>
+Z(t) = Mtt·[½·ZSS·cos(2ϕ) - ZDD/6 + ZEP/3] +
+       Mpp·[-½·ZSS·cos(2ϕ) - ZDD/6 + ZEP/3] +
+       Mrr·[ZDD/3 + ZEP/3] +
+       Mtp·ZSS·sin(2ϕ) +
+       Mrt·ZDS·cos(ϕ) +
+       Mrp·ZDS·sin(ϕ)
+</code></pre>
+
+          <h5>Radial (R):</h5>
+          <pre><code>
+R(t) = Mtt·[½·RSS·cos(2ϕ) - RDD/6 + REP/3] +
+       Mpp·[-½·RSS·cos(2ϕ) - RDD/6 + REP/3] +
+       Mrr·[RDD/3 + REP/3] +
+       Mtp·RSS·sin(2ϕ) +
+       Mrt·RDS·cos(ϕ) +
+       Mrp·RDS·sin(ϕ)
+</code></pre>
+
+          <h5>Transverse (T):</h5>
+          <pre><code>
+T(t) = Mtt·[½·TSS·sin(2ϕ)] -
+       Mpp·[½·TSS·sin(2ϕ)] -
+       Mtp·TSS·cos(2ϕ) +
+       Mrt·TDS·sin(ϕ) -
+       Mrp·TDS·cos(ϕ)
+</code></pre>
+          <p>
+            These equations show how each tensor component influences different
+            wavefield directions (Z, R, T), using corresponding Green’s function
+            types.
+          </p>
+
+          <h4>6. 3D Visualization</h4>
+          <p>
+            A 3D visualization, implemented via <code>Three.js</code>, assists
+            in understanding the spatial relationships:
+          </p>
+          <ul>
+            <li>
+              <strong>Crust volume:</strong> Rectangular prism representing
+              Earth’s outer shell.
+            </li>
+            <li>
+              <strong>Source:</strong> Red sphere showing hypocenter (depth &
+              location).
+            </li>
+            <li>
+              <strong>Receiver:</strong> Blue cone showing surface seismometer
+              at desired azimuth.
+            </li>
+            <li>
+              <strong>Azimuth arc:</strong> Curved line from North to receiver
+              location.
+            </li>
+            <li>
+              <strong>Seismic rays:</strong> Visual lines indicating wave travel
+              paths.
+            </li>
+          </ul>
+          <p>
+            By rotating and adjusting the azimuth, student can intuitively see
+            how different fault orientations and receiver angles influence
+            seismic observations.
+          </p>
+        </section>
+      </div>
+
+      <footer class="main-footer">
+        <h4 align="center">
+          Lab contributed by IIT Roorkee
+          <!-- Institute Name -->
+        </h4>
+      </footer>
+    </div>
+  </body>
+</html>
+<script>
+  function theory() {
+    document.getElementById("theory").style.backgroundColor = "#009dff";
+  }
+</script>
+<!-- ./wrapper -->
+<!-- jQuery 2.2.3 -->
+<script src="../../plugins/jQuery/jquery-2.2.3.min.js"></script>
+<!-- jQuery UI 1.11.4 -->
+<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+<!-- Bootstrap 3.3.6 -->
+<script src="../../bootstrap/js/bootstrap.min.js"></script>
+<!-- Slimscroll -->
+<script src="../../plugins/slimScroll/jquery.slimscroll.min.js"></script>
+<!-- FastClick -->
+<script src="../../plugins/fastclick/fastclick.js"></script>
+<!-- AdminLTE App -->
+<script src="../../dist/js/app.min.js"></script>

@@ -1,0 +1,394 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge" http-equiv="X-UA-Compatible" />
+    <title>Virtual Labs</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      name="viewport"
+    />
+    <!-- Bootstrap 3.3.6 -->
+    <link href="../../bootstrap/css/bootstrap.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Theme style -->
+    <link href="../../dist/css/AdminLTE.css" rel="stylesheet" />
+    <!-- AdminLTE Skins. Choose a skin from the css/skins folder instead of downloading all of them to reduce the load. -->
+    <link href="../../dist/css/skins/_all-skins.min.css" rel="stylesheet" />
+    <script>
+      window.onload = function () {
+        document.getElementById("procedure").className = "active treeview";
+      };
+    </script>
+    <style>
+      #toggle_nav:hover {
+        background-color: #1261a0;
+      }
+      #aim {
+        background-color: #009dff;
+      }
+      #aim:hover,
+      #theory:hover,
+      #pretest:hover,
+      #procedure:hover,
+      #simulation:hover,
+      #result:hover,
+      #posttest:hover,
+      #references:hover {
+        background-color: #009dff;
+      }
+    </style>
+  </head>
+  <body class="hold-transition skin-blue sidebar-mini">
+    <!--Navigation Bar-->
+    <div class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <button
+            class="navbar-toggle"
+            data-target="#navbar-ex-collapse"
+            data-toggle="collapse"
+            type="button"
+          >
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="http://iitb.ac.in"
+            ><span
+              ><img
+                src="images/iitrLogo.png"
+                style="margin-top: -15px; height: 50px; width: 400px" /></span
+          ></a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-ex-collapse"></div>
+      </div>
+    </div>
+    <div class="wrapper">
+      <header class="main-header">
+        <!-- Logo -->
+        <a
+          class="logo"
+          href="../index.html"
+          style="
+            background-color: #009dff;
+            border-right: solid;
+            border-right-color: #1261a0;
+          "
+        >
+          <p align="center" style="font-size: 1em">Geophysics Lab</p>
+        </a>
+        <!-- Header Navbar: style can be found in header.less -->
+        <nav class="navbar navbar-static-top" style="background-color: #009dff">
+          <!-- Sidebar toggle button-->
+          <a
+            class="sidebar-toggle"
+            data-toggle="offcanvas"
+            href="#"
+            id="toggle_nav"
+            role="button"
+          >
+            <span class="sr-only">Toggle navigation</span>
+          </a>
+          <section class="content-header">
+            <ol class="breadcrumb">
+              <li>
+                <a href="../index.html"
+                  ><i class="fa fa-dashboard"></i>Geophysics Lab
+                  <!-- Write lab name here -->
+                </a>
+              </li>
+              <li>
+                <a href="#"
+                  >Synthetic Seismogram Generation using focal mechanism
+                  <!-- Write experiment name here -->
+                </a>
+              </li>
+              <li class="active">Procedure</li>
+            </ol>
+          </section>
+        </nav>
+      </header>
+      <!-- Left side column. contains the logo and sidebar -->
+      <aside class="main-sidebar" style="background-color: #1261a0">
+        <!-- sidebar: style can be found in sidebar.less -->
+        <section class="sidebar">
+          <!-- search form -->
+          <form action="#" class="sidebar-form" method="get">
+            <div class="input-group"></div>
+          </form>
+          <!-- /.sear ch form -->
+          <!-- sidebar menu: : style can be found in sidebar.less -->
+          <ul class="sidebar-menu" style="background-color: #1261a0">
+            <li class="treeview" id="aim">
+              <a href="index.html" id="aim">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Aim</span>
+              </a>
+            </li>
+            <li class="treeview" id="theory">
+              <a href="theory.html" id="theory">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Theory</span>
+              </a>
+            </li>
+            <!--   <li class="treeview" id="numerical">
+                    <a href="numerical.php">
+                        <i class="fa fa-laptop"></i>
+                        <span>Numerical</span>
+                        <span class="pull-right-container">
+                        </span>
+                    </a>
+                </li>
+                <li class="treeview" id="program">
+                    <a href="program.php">
+                        <i class="fa fa-laptop"></i>
+                        <span>Program</span>
+                        <span class="pull-right-container">
+                        </span>
+                    </a>
+                </li> -->
+            <li class="treeview" id="pretest">
+              <a href="pretest.html" id="pretest">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Pre Test</span>
+              </a>
+            </li>
+            <li class="treeview" id="procedure">
+              <a href="procedure.html" id="procedure">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Procedure</span>
+              </a>
+            </li>
+            <li class="treeview" id="simulation">
+              <a href="simulation.html" id="simulation">
+                <i class="fa fa-laptop" style="color: white"></i>
+                <span style="color: white">Simulation</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+            <li class="treeview" id="posttest">
+              <a href=" posttest.html" id="posttest">
+                <i class="fa fa-files-o" style="color: white"> </i>
+                <span style="color: white">Post Test</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+            <li class="treeview" id="ref">
+              <a href="references.html" id="references">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">References</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+          </ul>
+        </section>
+        <!-- /.sidebar -->
+      </aside>
+      <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+          <h1 align="center">
+            Synthetic Seismogram Generation using focal mechanism
+            <!-- Write experiment name here -->
+          </h1>
+        </section>
+        <!-- Main content -->
+        <section class="content">
+          <h4>Part A: Generating and Analyzing Synthetic Seismograms</h4>
+
+          <ol>
+            <li>
+              <strong>Start the Simulation:</strong>
+              <p>
+                Open the virtual lab interface. On the left sidebar, locate and
+                fill in the values for
+                <strong>Strike</strong> (ϕ), <strong>Dip</strong> (δ),
+                <strong>Rake</strong> (λ), <strong>Magnitude</strong> (Mw), and
+                <strong>Azimuth</strong> (θ) in degrees.
+              </p>
+            </li>
+
+            <li>
+              <strong>Understand the Input Parameters:</strong>
+              <ul>
+                <li>
+                  <strong>Strike:</strong> Direction of the fault trace with
+                  respect to north.
+                </li>
+                <li>
+                  <strong>Dip:</strong> Angle between the fault plane and the
+                  horizontal.
+                </li>
+                <li>
+                  <strong>Rake:</strong> Direction of slip along the fault
+                  plane.
+                </li>
+                <li>
+                  <strong>Azimuth:</strong> Direction from the earthquake source
+                  to the receiver station.
+                </li>
+              </ul>
+            </li>
+
+            <li>
+              <strong>Click "Generate Waveforms":</strong>
+              <p>
+                The simulation uses the entered parameters to compute the moment
+                tensor, retrieve corresponding Green's functions, and produce
+                synthetic waveforms for the following components:
+              </p>
+              <ul>
+                <li><strong>Vertical (Z)</strong></li>
+                <li><strong>Radial (R)</strong></li>
+                <li><strong>Transverse (T)</strong></li>
+              </ul>
+            </li>
+
+            <li>
+              <strong>Observe the Seismograms:</strong>
+              <p>
+                The waveforms are displayed as interactive plots using the
+                <strong>Plotly.js</strong> library. You can:
+              </p>
+              <ul>
+                <li>
+                  <strong>Zoom in/out:</strong> Use your mouse wheel or box zoom
+                  for detailed analysis of waveform features.
+                </li>
+                <li>
+                  <strong>Pan:</strong> Click and drag to move around the plot
+                  area.
+                </li>
+                <li>
+                  <strong>Hover:</strong> Hover your mouse over any point to see
+                  time and amplitude values.
+                </li>
+                <li>
+                  <strong>Snapshot:</strong> Click the camera icon to save the
+                  waveform as a PNG image.
+                </li>
+                <li>
+                  <strong>Toggle components:</strong> Use the legend to
+                  show/hide Z, R, or T traces.
+                </li>
+              </ul>
+              <p>
+                Try changing the <strong>rake</strong> or
+                <strong>azimuth</strong> values and observe how the waveform
+                patterns evolve. Focus on:
+              </p>
+              <ul>
+                <li>
+                  Polarity changes in the T component with azimuth variations
+                </li>
+                <li>Magnitude-dependent amplitude scaling</li>
+                <li>
+                  Distribution of energy across Z, R, and T for different
+                  mechanisms
+                </li>
+              </ul>
+            </li>
+
+            <li>
+              <strong>Download the Data (Optional):</strong>
+              <p>
+                Click the <strong>"Download Waveforms"</strong> button to export
+                the waveform data as a CSV file. This file can be loaded into
+                analysis tools like Python (NumPy/Pandas) or MATLAB for further
+                processing.
+              </p>
+            </li>
+          </ol>
+
+          <h4>Part B: Visualizing Azimuth and Source-Receiver Geometry</h4>
+
+          <ol>
+            <li>
+              <strong>Scroll Down to the 3D View:</strong>
+              <p>
+                Below the waveform plots, you'll find a 3D cross-sectional view
+                of the Earth’s crust created with <code>Three.js</code>.
+              </p>
+            </li>
+
+            <li>
+              <strong>Understand the Visualization:</strong>
+              <ul>
+                <li>
+                  <strong>Red Sphere:</strong> Earthquake source (hypocenter at
+                  depth)
+                </li>
+                <li>
+                  <strong>Blue Cone:</strong> Receiver location on Earth's
+                  surface
+                </li>
+                <li>
+                  <strong>Green Line:</strong> North reference line (0° azimuth)
+                </li>
+                <li>
+                  <strong>Red Arc:</strong> Visual representation of azimuth
+                  angle
+                </li>
+              </ul>
+            </li>
+
+            <li>
+              <strong>Change the Azimuth Value:</strong>
+              <p>
+                Update the azimuth value in the form (e.g., from 45° to 135°) to
+                reposition the receiver. This helps visualize how directionality
+                impacts waveform amplitudes and radiation patterns.
+              </p>
+            </li>
+
+            <li>
+              <strong>Rotate the Scene:</strong>
+              <p>
+                Use your mouse or touchpad to rotate, zoom, or pan the 3D view.
+                This helps in understanding the spatial geometry of source,
+                receiver, and fault orientation.
+              </p>
+            </li>
+
+            <li>
+              <strong>Interpret What You See:</strong>
+              <p>
+                Examine how energy radiates differently in various directions
+                due to the faulting style. Seismologists use these variations to
+                deduce the underlying fault geometry and mechanism from observed
+                seismograms.
+              </p>
+            </li>
+          </ol>
+        </section>
+
+        <!-- /.content -->
+      </div>
+      <footer class="main-footer">
+        <h4 align="center">
+          Lab contributed by IIT Roorkee
+          <!-- Institute Name -->
+        </h4>
+      </footer>
+    </div>
+  </body>
+</html>
+<!-- ./wrapper -->
+<!-- jQuery 2.2.3 -->
+<script src="../../plugins/jQuery/jquery-2.2.3.min.js"></script>
+<!-- jQuery UI 1.11.4 -->
+<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+<!-- Bootstrap 3.3.6 -->
+<script src="../../bootstrap/js/bootstrap.min.js"></script>
+<!-- Slimscroll -->
+<script src="../../plugins/slimScroll/jquery.slimscroll.min.js"></script>
+<!-- FastClick -->
+<script src="../../plugins/fastclick/fastclick.js"></script>
+<!-- AdminLTE App -->
+<script src="../../dist/js/app.min.js"></script>
