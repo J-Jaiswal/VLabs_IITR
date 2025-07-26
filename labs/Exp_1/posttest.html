@@ -209,24 +209,24 @@
             <ol>
               <li>
                 <p>
-                  In the 3D azimuth visualization, what does the red arc
-                  represent?
+                  What is the valid range of strike, dip, and rake angles used
+                  in a moment tensor solution?
                 </p>
                 <label
-                  ><input type="radio" name="q1" value="A" required /> A. The
-                  surface projection of the crust</label
+                  ><input type="radio" name="q1" value="A" required /> A.
+                  Strike: 0°–360°, Dip: 0°–90°, Rake: –180° to 180°</label
                 ><br />
                 <label
-                  ><input type="radio" name="q1" value="B" /> B. A travel path
-                  of S-wave</label
+                  ><input type="radio" name="q1" value="B" /> B. Strike:
+                  0°–180°, Dip: 0°–90°, Rake: 0° to 360°</label
                 ><br />
                 <label
-                  ><input type="radio" name="q1" value="C" /> C. The angular
-                  direction (azimuth) between source and receiver</label
+                  ><input type="radio" name="q1" value="C" /> C. Strike: 0°–90°,
+                  Dip: 0°–180°, Rake: –90° to 90°</label
                 ><br />
                 <label
-                  ><input type="radio" name="q1" value="D" /> D. Magnitude
-                  scale</label
+                  ><input type="radio" name="q1" value="D" /> D. Strike:
+                  0°–360°, Dip: 0°–180°, Rake: –360° to 360°</label
                 >
               </li>
 
@@ -356,7 +356,7 @@
                 e.preventDefault();
 
                 const correctAnswers = {
-                  q1: "C",
+                  q1: "A",
                   q2: "C",
                   q3: "A",
                   q4: "B",
