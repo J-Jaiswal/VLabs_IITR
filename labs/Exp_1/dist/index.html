@@ -32,327 +32,349 @@
     </style>
   </head>
   <body>
-    <div>
-      <div class="container">
-        <!-- Sidebar -->
-        <div class="sidebar">
-          <h2>Seismic Simulator</h2>
-          <div class="model-info">
-            <p><strong>Velocity Model:</strong> ak135_2s</p>
-            <p><strong>Source Distance:</strong> 600 km</p>
-            <p><strong>Source Depth:</strong> 10 km</p>
-          </div>
-
-          <div class="inputs">
-            <label
-              >Strike (°)<input type="number" id="strike" value="30"
-            /></label>
-            <label>Dip (°)<input type="number" id="dip" value="45" /></label>
-            <label>Rake (°)<input type="number" id="rake" value="60" /></label>
-            <label
-              >Magnitude (Mw)<input type="number" id="magnitude" value="6"
-            /></label>
-            <label
-              >Azimuth (°)<input type="number" id="azimuth" value="30"
-            /></label>
-          </div>
-
-          <button id="generateBtn" class="blue-btn">Generate Waveforms</button>
-          <button id="downloadBtn" class="green-btn">Download Waveforms</button>
+    <div class="container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <h2>Waveform Simulator</h2>
+        <div class="model-info">
+          <p><strong>Velocity Model:</strong> ak135_2s</p>
+          <p><strong>Source Distance:</strong> 600 km</p>
+          <p><strong>Source Depth:</strong> 10 km</p>
         </div>
-        <div
-          id="main-container"
-          style="
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-          "
-        >
-          <!-- Plot -->
-          <div
-            class="plot-area"
-            style="width: 75vw; height: 50vh; margin-bottom: 20px"
-          >
-            <div id="waveformPlot"></div>
-          </div>
+
+        <div class="inputs">
+          <label
+            >Strike (°)<input type="number" id="strike" value="30"
+          /></label>
+          <label>Dip (°)<input type="number" id="dip" value="45" /></label>
+          <label>Rake (°)<input type="number" id="rake" value="60" /></label>
+          <label
+            >Magnitude (Mw)<input type="number" id="magnitude" value="6"
+          /></label>
+          <label
+            >Azimuth (°)<input type="number" id="azimuth" value="30"
+          /></label>
         </div>
+
+        <button id="generateBtn" class="blue-btn">Generate Waveforms</button>
+        <button id="downloadBtn" class="green-btn">Download Waveforms</button>
       </div>
-
       <div
-        id="azimuth-visualization-section"
-        style="width: 100%; text-align: center; padding: 20px 0"
+        id="main-container"
+        style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          height: 100vh;
+        "
       >
-        <h2
-          style="
-            font-family: Arial, sans-serif;
-            margin-bottom: 20px;
-            display: inline-block;
-            padding: 12px 20px;
-            border: 2px solid #ccc;
-            border-radius: 12px;
-            background-color: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-          "
-        >
-          Azimuth Visualization
-        </h2>
+        <!-- Plot -->
         <div
-          id="threejs-container"
-          style="
-            width: 75vw;
-            height: 75vh;
-            margin: auto;
-            position: relative;
-            cursor: pointer;
-            overflow: hidden;
-          "
-        ></div>
+          class="plot-area"
+          style="width: 75vw; height: 50vh; margin-bottom: 20px"
+        >
+          <div
+            id="azimuth-visualization-section"
+            style="width: 100%; text-align: center; padding: 20px 0"
+          >
+            <h2
+              style="
+                font-family: Arial, sans-serif;
+                margin-bottom: 20px;
+                display: inline-block;
+                padding: 12px 20px;
+                border: 2px solid #ccc;
+                border-radius: 12px;
+                background-color: rgba(255, 255, 255, 0.9);
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+              "
+            >
+              Azimuth Visualization
+            </h2>
+            <div
+              id="threejs-container"
+              style="
+                width: 52vw;
+                height: 52vh;
+                margin: auto;
+                position: relative;
+                cursor: pointer;
+                overflow: hidden;
+              "
+            ></div>
 
-        <script src="https://cdn.jsdelivr.net/npm/three@0.137.5/build/three.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/three@0.137.5/examples/js/controls/OrbitControls.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/three@0.137.5/build/three.min.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/three@0.137.5/examples/js/controls/OrbitControls.min.js"></script>
 
-        <script>
-          document.addEventListener("DOMContentLoaded", () => {
-            const crustWidth = 600,
-              crustHeight = 100,
-              crustDepth = 500;
-            const displayedDepthMultiplier = 3;
-            const trueEpicenterDepth = 10;
-            const visualDepth = trueEpicenterDepth * displayedDepthMultiplier;
-            const maxReceiverDistance = crustWidth / 2;
+            <script>
+              document.addEventListener("DOMContentLoaded", () => {
+                const crustWidth = 600,
+                  crustHeight = 100,
+                  crustDepth = 500;
+                const displayedDepthMultiplier = 3;
+                const trueEpicenterDepth = 10;
+                const visualDepth =
+                  trueEpicenterDepth * displayedDepthMultiplier;
+                const maxReceiverDistance = crustWidth / 2;
 
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(50, 4 / 3, 0.1, 5000);
-            camera.position.set(0, 200, 600);
-
-            const renderer = new THREE.WebGLRenderer({
-              antialias: true,
-              alpha: true,
-            });
-
-            const container = document.getElementById("threejs-container");
-            renderer.setSize(container.offsetWidth, container.offsetHeight);
-            container.appendChild(renderer.domElement);
-
-            camera.aspect = container.offsetWidth / container.offsetHeight;
-            camera.updateProjectionMatrix();
-
-            const controls = new THREE.OrbitControls(
-              camera,
-              renderer.domElement
-            );
-            controls.maxDistance = 1000;
-
-            const ambient = new THREE.AmbientLight(0xffffff, 1.0);
-            const point = new THREE.PointLight(0xffffff, 0.8);
-            point.position.set(0, 300, 300);
-            scene.add(ambient, point);
-
-            const objectGroup = new THREE.Group();
-            const labelGroup = new THREE.Group();
-            scene.add(objectGroup);
-            scene.add(labelGroup);
-
-            function createLabel(text, position, color = "black", size = 100) {
-              const canvas = document.createElement("canvas");
-              const context = canvas.getContext("2d");
-              const scale = 2;
-              context.font = `${size * scale}px Arial`;
-              const textWidth = context.measureText(text).width;
-
-              canvas.width = textWidth;
-              canvas.height = size * scale * 1.5;
-              context.font = `${size * scale}px Arial`;
-              context.fillStyle = color;
-              context.fillText(text, 0, size * scale);
-
-              const texture = new THREE.CanvasTexture(canvas);
-              texture.needsUpdate = true;
-
-              const material = new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true,
-                depthTest: false,
-              });
-
-              const sprite = new THREE.Sprite(material);
-              sprite.scale.set(textWidth / 10, (size * scale) / 10, 1);
-              sprite.position.copy(position);
-              sprite.renderOrder = 999;
-
-              return sprite;
-            }
-
-            function createSceneObjects() {
-              objectGroup.clear();
-              labelGroup.clear();
-
-              const center = new THREE.Vector3(0, 0, 0);
-              const epicenter = new THREE.Vector3(0, -visualDepth, 0);
-              const currentAzimuth =
-                parseFloat(document.getElementById("azimuth").value) || 0;
-              const azimuthRad = THREE.MathUtils.degToRad(currentAzimuth);
-              const safeDistance = Math.min(200, maxReceiverDistance);
-              const receiver = new THREE.Vector3(
-                safeDistance * Math.cos(azimuthRad),
-                0,
-                safeDistance * Math.sin(azimuthRad)
-              );
-
-              const crust = new THREE.Mesh(
-                new THREE.BoxGeometry(crustWidth, crustHeight, crustDepth),
-                new THREE.MeshStandardMaterial({
-                  color: "#8B5A2B",
-                  transparent: true,
-                  opacity: 0.3,
-                })
-              );
-              crust.position.y = -crustHeight / 2;
-              objectGroup.add(crust);
-              labelGroup.add(
-                createLabel(
-                  "Crust",
-                  new THREE.Vector3(
-                    0,
-                    -crustHeight / 2 + 5,
-                    -crustDepth / 2 + 20
-                  ),
-                  "#8B5A2B"
-                )
-              );
-
-              const surface = new THREE.Mesh(
-                new THREE.PlaneGeometry(crustWidth, crustDepth),
-                new THREE.MeshStandardMaterial({
-                  color: "#228B22",
-                  transparent: true,
-                  opacity: 0.3,
-                })
-              );
-              surface.rotation.x = -Math.PI / 2;
-              surface.position.y = 0.51;
-              objectGroup.add(surface);
-              labelGroup.add(
-                createLabel(
-                  "Surface",
-                  new THREE.Vector3(0, 15, crustDepth / 2 - 20),
-                  "#228B22"
-                )
-              );
-
-              const ring = new THREE.Mesh(
-                new THREE.RingGeometry(safeDistance - 1, safeDistance + 1, 128),
-                new THREE.MeshBasicMaterial({
-                  color: "purple",
-                  side: THREE.DoubleSide,
-                  transparent: true,
-                  opacity: 0.5,
-                })
-              );
-              ring.rotation.x = -Math.PI / 2;
-              ring.position.y = 0.55;
-              objectGroup.add(ring);
-              labelGroup.add(
-                createLabel(
-                  "0° (North)",
-                  new THREE.Vector3(safeDistance + 10, 10, 0),
-                  "green"
-                )
-              );
-
-              const addLine = (pts, clr) => {
-                const geom = new THREE.BufferGeometry().setFromPoints(pts);
-                const mat = new THREE.LineBasicMaterial({ color: clr });
-                objectGroup.add(new THREE.Line(geom, mat));
-              };
-
-              addLine([center, epicenter], "blue");
-              addLine([center, receiver], "orange");
-              addLine([epicenter, receiver], "gray");
-              addLine([center, new THREE.Vector3(safeDistance, 0, 0)], "green");
-
-              const arc = [];
-              const segments = 64;
-              const radius = safeDistance / 4;
-              for (let i = 0; i <= segments; i++) {
-                const angle = (i / segments) * azimuthRad;
-                arc.push(
-                  new THREE.Vector3(
-                    radius * Math.cos(angle),
-                    0.5,
-                    radius * Math.sin(angle)
-                  )
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(
+                  50,
+                  4 / 3,
+                  0.1,
+                  5000
                 );
-              }
-              addLine(arc, "red");
-              labelGroup.add(
-                createLabel(
-                  `Azimuth: ${currentAzimuth}°`,
-                  new THREE.Vector3(radius, 20, radius / 2),
-                  "red",
-                  90
-                )
-              );
+                camera.position.set(0, 200, 600);
 
-              const epicenterMesh = new THREE.Mesh(
-                new THREE.SphereGeometry(6, 32, 32),
-                new THREE.MeshStandardMaterial({ color: "red" })
-              );
-              epicenterMesh.position.copy(epicenter);
-              objectGroup.add(epicenterMesh);
-              labelGroup.add(
-                createLabel(
-                  "Source (10 km)",
-                  epicenter.clone().add(new THREE.Vector3(0, -10, 10)),
-                  "red"
-                )
-              );
+                const renderer = new THREE.WebGLRenderer({
+                  antialias: true,
+                  alpha: true,
+                });
 
-              const receiverMesh = new THREE.Mesh(
-                new THREE.ConeGeometry(8, 20, 32),
-                new THREE.MeshStandardMaterial({ color: "blue" })
-              );
-              receiverMesh.position.copy(receiver);
-              objectGroup.add(receiverMesh);
-              labelGroup.add(
-                createLabel(
-                  "Receiver",
-                  receiver.clone().add(new THREE.Vector3(0, 20, 0)),
-                  "blue"
-                )
-              );
+                const container = document.getElementById("threejs-container");
+                renderer.setSize(container.offsetWidth, container.offsetHeight);
+                container.appendChild(renderer.domElement);
 
-              const midPoint = epicenter.clone().lerp(receiver, 0.5);
-              midPoint.y = 15;
-              labelGroup.add(createLabel("600 km", midPoint, "orange", 90));
-            }
+                camera.aspect = container.offsetWidth / container.offsetHeight;
+                camera.updateProjectionMatrix();
 
-            // ✅ Call once when DOM is ready
-            createSceneObjects();
+                const controls = new THREE.OrbitControls(
+                  camera,
+                  renderer.domElement
+                );
+                controls.maxDistance = 1000;
 
-            // ✅ Also update on generate button click
-            document
-              .getElementById("generateBtn")
-              .addEventListener("click", () => {
+                const ambient = new THREE.AmbientLight(0xffffff, 1.0);
+                const point = new THREE.PointLight(0xffffff, 0.8);
+                point.position.set(0, 300, 300);
+                scene.add(ambient, point);
+
+                const objectGroup = new THREE.Group();
+                const labelGroup = new THREE.Group();
+                scene.add(objectGroup);
+                scene.add(labelGroup);
+
+                function createLabel(
+                  text,
+                  position,
+                  color = "black",
+                  size = 100
+                ) {
+                  const canvas = document.createElement("canvas");
+                  const context = canvas.getContext("2d");
+                  const scale = 2;
+                  context.font = `${size * scale}px Arial`;
+                  const textWidth = context.measureText(text).width;
+
+                  canvas.width = textWidth;
+                  canvas.height = size * scale * 1.5;
+                  context.font = `${size * scale}px Arial`;
+                  context.fillStyle = color;
+                  context.fillText(text, 0, size * scale);
+
+                  const texture = new THREE.CanvasTexture(canvas);
+                  texture.needsUpdate = true;
+
+                  const material = new THREE.SpriteMaterial({
+                    map: texture,
+                    transparent: true,
+                    depthTest: false,
+                  });
+
+                  const sprite = new THREE.Sprite(material);
+                  sprite.scale.set(textWidth / 10, (size * scale) / 10, 1);
+                  sprite.position.copy(position);
+                  sprite.renderOrder = 999;
+
+                  return sprite;
+                }
+
+                function createSceneObjects() {
+                  objectGroup.clear();
+                  labelGroup.clear();
+
+                  const center = new THREE.Vector3(0, 0, 0);
+                  const epicenter = new THREE.Vector3(0, -visualDepth, 0);
+                  const currentAzimuth =
+                    parseFloat(document.getElementById("azimuth").value) || 0;
+                  const azimuthRad = THREE.MathUtils.degToRad(currentAzimuth);
+                  const safeDistance = Math.min(200, maxReceiverDistance);
+                  const receiver = new THREE.Vector3(
+                    safeDistance * Math.cos(azimuthRad),
+                    0,
+                    safeDistance * Math.sin(azimuthRad)
+                  );
+
+                  const crust = new THREE.Mesh(
+                    new THREE.BoxGeometry(crustWidth, crustHeight, crustDepth),
+                    new THREE.MeshStandardMaterial({
+                      color: "#8B5A2B",
+                      transparent: true,
+                      opacity: 0.3,
+                    })
+                  );
+                  crust.position.y = -crustHeight / 2;
+                  objectGroup.add(crust);
+                  labelGroup.add(
+                    createLabel(
+                      "Crust",
+                      new THREE.Vector3(
+                        0,
+                        -crustHeight / 2 + 5,
+                        -crustDepth / 2 + 20
+                      ),
+                      "#8B5A2B"
+                    )
+                  );
+
+                  const surface = new THREE.Mesh(
+                    new THREE.PlaneGeometry(crustWidth, crustDepth),
+                    new THREE.MeshStandardMaterial({
+                      color: "#228B22",
+                      transparent: true,
+                      opacity: 0.3,
+                    })
+                  );
+                  surface.rotation.x = -Math.PI / 2;
+                  surface.position.y = 0.51;
+                  objectGroup.add(surface);
+                  labelGroup.add(
+                    createLabel(
+                      "Surface",
+                      new THREE.Vector3(0, 15, crustDepth / 2 - 20),
+                      "#228B22"
+                    )
+                  );
+
+                  const ring = new THREE.Mesh(
+                    new THREE.RingGeometry(
+                      safeDistance - 1,
+                      safeDistance + 1,
+                      128
+                    ),
+                    new THREE.MeshBasicMaterial({
+                      color: "purple",
+                      side: THREE.DoubleSide,
+                      transparent: true,
+                      opacity: 0.5,
+                    })
+                  );
+                  ring.rotation.x = -Math.PI / 2;
+                  ring.position.y = 0.55;
+                  objectGroup.add(ring);
+                  labelGroup.add(
+                    createLabel(
+                      "0° (North)",
+                      new THREE.Vector3(safeDistance + 10, 10, 0),
+                      "green"
+                    )
+                  );
+
+                  const addLine = (pts, clr) => {
+                    const geom = new THREE.BufferGeometry().setFromPoints(pts);
+                    const mat = new THREE.LineBasicMaterial({ color: clr });
+                    objectGroup.add(new THREE.Line(geom, mat));
+                  };
+
+                  addLine([center, epicenter], "blue");
+                  addLine([center, receiver], "orange");
+                  addLine([epicenter, receiver], "gray");
+                  addLine(
+                    [center, new THREE.Vector3(safeDistance, 0, 0)],
+                    "green"
+                  );
+
+                  const arc = [];
+                  const segments = 64;
+                  const radius = safeDistance / 4;
+                  for (let i = 0; i <= segments; i++) {
+                    const angle = (i / segments) * azimuthRad;
+                    arc.push(
+                      new THREE.Vector3(
+                        radius * Math.cos(angle),
+                        0.5,
+                        radius * Math.sin(angle)
+                      )
+                    );
+                  }
+                  addLine(arc, "red");
+                  labelGroup.add(
+                    createLabel(
+                      `Azimuth: ${currentAzimuth}°`,
+                      new THREE.Vector3(radius, 20, radius / 2),
+                      "red",
+                      90
+                    )
+                  );
+
+                  const epicenterMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(6, 32, 32),
+                    new THREE.MeshStandardMaterial({ color: "red" })
+                  );
+                  epicenterMesh.position.copy(epicenter);
+                  objectGroup.add(epicenterMesh);
+                  labelGroup.add(
+                    createLabel(
+                      "Source (10 km)",
+                      epicenter.clone().add(new THREE.Vector3(0, -10, 10)),
+                      "red"
+                    )
+                  );
+
+                  const receiverMesh = new THREE.Mesh(
+                    new THREE.ConeGeometry(8, 20, 32),
+                    new THREE.MeshStandardMaterial({ color: "blue" })
+                  );
+                  receiverMesh.position.copy(receiver);
+                  objectGroup.add(receiverMesh);
+                  labelGroup.add(
+                    createLabel(
+                      "Receiver",
+                      receiver.clone().add(new THREE.Vector3(0, 20, 0)),
+                      "blue"
+                    )
+                  );
+
+                  const midPoint = epicenter.clone().lerp(receiver, 0.5);
+                  midPoint.y = 15;
+                  labelGroup.add(createLabel("600 km", midPoint, "orange", 90));
+                }
+
+                // ✅ Call once when DOM is ready
                 createSceneObjects();
+
+                // ✅ Also update on generate button click
+                document
+                  .getElementById("generateBtn")
+                  .addEventListener("click", () => {
+                    createSceneObjects();
+                  });
+
+                // ✅ (Optional) update while typing azimuth input
+                document
+                  .getElementById("azimuth")
+                  .addEventListener("input", () => {
+                    createSceneObjects();
+                  });
+
+                renderer.setAnimationLoop(() => renderer.render(scene, camera));
+
+                window.addEventListener("resize", () => {
+                  const container =
+                    document.getElementById("threejs-container");
+                  renderer.setSize(
+                    container.offsetWidth,
+                    container.offsetHeight
+                  );
+                  camera.aspect =
+                    container.offsetWidth / container.offsetHeight;
+                  camera.updateProjectionMatrix();
+                });
               });
-
-            // ✅ (Optional) update while typing azimuth input
-            document.getElementById("azimuth").addEventListener("input", () => {
-              createSceneObjects();
-            });
-
-            renderer.setAnimationLoop(() => renderer.render(scene, camera));
-
-            window.addEventListener("resize", () => {
-              const container = document.getElementById("threejs-container");
-              renderer.setSize(container.offsetWidth, container.offsetHeight);
-              camera.aspect = container.offsetWidth / container.offsetHeight;
-              camera.updateProjectionMatrix();
-            });
-          });
-        </script>
+            </script>
+          </div>
+          <div id="waveformPlot" style="margin-top: 120px"></div>
+        </div>
       </div>
     </div>
     <script src="main.js"></script>

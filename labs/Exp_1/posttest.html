@@ -208,64 +208,68 @@
           <form id="postQuizForm">
             <ol>
               <li>
-                <p>How did the azimuth angle affect the waveform?</p>
+                <p>
+                  In the 3D azimuth visualization, what does the red arc
+                  represent?
+                </p>
                 <label
-                  ><input type="radio" name="q1" value="A" required /> A. No
-                  change</label
+                  ><input type="radio" name="q1" value="A" required /> A. The
+                  surface projection of the crust</label
                 ><br />
                 <label
-                  ><input type="radio" name="q1" value="B" /> B. It rotated the
-                  energy distribution in Z, R, T components</label
+                  ><input type="radio" name="q1" value="B" /> B. A travel path
+                  of S-wave</label
                 ><br />
                 <label
-                  ><input type="radio" name="q1" value="C" /> C. Only affected
-                  T-component</label
+                  ><input type="radio" name="q1" value="C" /> C. The angular
+                  direction (azimuth) between source and receiver</label
                 ><br />
                 <label
-                  ><input type="radio" name="q1" value="D" /> D. It only scaled
-                  the waveform</label
+                  ><input type="radio" name="q1" value="D" /> D. Magnitude
+                  scale</label
+                >
+              </li>
+
+              <li>
+                <p>Changing the azimuth value in the simulation affects:</p>
+                <label
+                  ><input type="radio" name="q2" value="A" required /> A. The
+                  depth of the epicenter</label
+                ><br />
+                <label
+                  ><input type="radio" name="q2" value="B" /> B. The color of
+                  the waveform </label
+                ><br />
+                <label
+                  ><input type="radio" name="q2" value="C" /> C. The position of
+                  the receiver around the source</label
+                ><br />
+                <label
+                  ><input type="radio" name="q2" value="D" /> D. The type of
+                  velocity model used</label
                 >
               </li>
 
               <li>
                 <p>
-                  What change occurred in T-component when rake was adjusted?
+                  How does increasing the magnitude (Mw) affect the synthetic
+                  waveform amplitude?
                 </p>
                 <label
-                  ><input type="radio" name="q2" value="A" required /> A.
-                  Nothing</label
-                ><br />
-                <label
-                  ><input type="radio" name="q2" value="B" /> B. Polarity and
-                  shape changed</label
-                ><br />
-                <label
-                  ><input type="radio" name="q2" value="C" /> C. Only amplitude
-                  scaled</label
-                ><br />
-                <label
-                  ><input type="radio" name="q2" value="D" /> D. Time
-                  shifted</label
-                >
-              </li>
-
-              <li>
-                <p>Which component uses sin(2ϕ) term in weighting?</p>
-                <label
                   ><input type="radio" name="q3" value="A" required /> A.
-                  Transverse (T)</label
+                  Increases the amplitude</label
                 ><br />
                 <label
-                  ><input type="radio" name="q3" value="B" /> B. Vertical
-                  (Z)</label
+                  ><input type="radio" name="q3" value="B" /> B. Only affects
+                  the arrival time</label
                 ><br />
                 <label
-                  ><input type="radio" name="q3" value="C" /> C. Radial
-                  (R)</label
+                  ><input type="radio" name="q3" value="C" /> C. Decreases the
+                  amplitude </label
                 ><br />
                 <label
-                  ><input type="radio" name="q3" value="D" /> D.
-                  P-component</label
+                  ><input type="radio" name="q3" value="D" /> D. Changes the
+                  azimuth direction</label
                 >
               </li>
 
@@ -352,8 +356,8 @@
                 e.preventDefault();
 
                 const correctAnswers = {
-                  q1: "B",
-                  q2: "B",
+                  q1: "C",
+                  q2: "C",
                   q3: "A",
                   q4: "B",
                   q5: "A",
