@@ -202,7 +202,7 @@
 
         <!-- Main content -->
         <section class="content">
-          <h4>1. Seismic Moment Tensor</h4>
+          <h3>1. Seismic Moment Tensor</h3>
           <p>
             A <strong>moment tensor</strong> is a 3×3 matrix that describes the
             internal forces and deformation associated with an earthquake
@@ -253,10 +253,7 @@
             Azimuth plays a critical role in waveform synthesis because seismic
             wave radiation patterns vary with direction. For example:
           </p>
-          <ul>
-            <li>Transverse wave polarity flips at certain azimuths.</li>
-            <li>Amplitude varies due to radiation lobes from the fault.</li>
-          </ul>
+
           <p>
             In moment tensor-based simulation, azimuth enters the equations via
             terms like <code>cos(ϕ)</code>, <code>sin(ϕ)</code>,
@@ -264,7 +261,15 @@
             contribution of each Green's function.
           </p>
 
-          <h4>2. Moment Tensor Components</h4>
+          <h3>2. Moment Tensor Components</h3>
+
+          <p>
+            <strong>Moment tensor : </strong>
+            A double couple (constrained) that represents the shear faulting is
+            represented by only 4 independent parameters (strike, dip, rake, Mw)
+            Alternatively, a full moment tensor that also explains the tensile
+            nature represented all 6 independent parameters (Mij).
+          </p>
           <p>
             The moment tensor contains six independent components due to
             symmetry. These are named based on their directional contributions:
@@ -304,8 +309,74 @@ Mrp = -M₀ [cos(δ)cos(λ)cos(ϕ) + cos(2δ)sin(λ)sin(ϕ)]
 Mtp = -M₀ [cos(δ)cos(λ)sin(ϕ) - cos(2δ)sin(λ)cos(ϕ)]
 Mrt = -M₀ [sin(δ)cos(λ)cos(2ϕ) + ½ sin(2δ)sin(λ)sin(2ϕ)]
 </code></pre>
+          <!-- Radiation Pattern and Velocity Model  -->
+          <div class="section">
+            <h3>3. Radiation Pattern</h3>
+            <p>
+              The radiation pattern of an earthquake describes how seismic wave
+              energy is distributed in different directions from the earthquake
+              source. It depends on the orientation, slip direction of the
+              fault. The seismic energy propagates as P-waves (compressional)
+              and S-waves (shear). For a double-couple source (typical shear
+              faulting), the radiation pattern of P and S wave radiation
+              patterns shows distinct lobes: P-waves show a four-lobed pattern
+              and S-waves show a quadrupole pattern (Fig 1).
+            </p>
+            <p>
+              At certain angles, the amplitude of waves may be zero, known as
+              nodal planes.
+            </p>
+            <img
+              src="../Exp_1/dist/assets/radiation-pattern.PNG"
+              alt="Radiation Pattern Diagram"
+              style="
+                display: block;
+                margin: 20px auto;
+                max-width: 100%;
+                height: auto;
+              "
+            />
+            <div
+              class="caption"
+              style="text-align: center; font-style: italic; margin-top: 8px"
+            >
+              Fig 1: Radiation Pattern of P and S Waves
+            </div>
+          </div>
 
-          <h4>3. Green’s Functions</h4>
+          <div>
+            <h3>4. Velocity Model (ak135)</h3>
+            <p>
+              In seismology, a velocity model represents how the velocities of
+              seismic waves change with depth and location inside the Earth. It
+              is a fundamental tool used to understand and simulate the
+              propagation of seismic waves through the Earth's interior.
+              Typically, the model includes information about P-wave and S-wave
+              velocities, density, and attenuation variations as a function of
+              depth and geographic position. Velocity models are classified as
+              1D, 2D, or 3D, based on how seismic velocity varies: only with
+              depth in 1D (e.g., ak135 (fig 2), PREM), with depth and horizontal
+              distance in 2D, and in all spatial directions in 3D.
+            </p>
+            <img
+              src="../Exp_1//dist/assets/velocity-model.PNG"
+              alt="ak135 Velocity Model"
+              style="
+                display: block;
+                margin: 20px auto;
+                max-width: 100%;
+                height: auto;
+              "
+            />
+            <div
+              class="caption"
+              style="text-align: center; font-style: italic; margin-top: 8px"
+            >
+              Fig 2: ak135-F Average Model – Velocity vs Depth
+            </div>
+          </div>
+          <!-- Greens Function -->
+          <h3>5. Green’s Functions</h3>
           <p>
             <strong>Green’s functions</strong> represent the Earth’s impulse
             response to a unit source. When convolved with a moment tensor, they
@@ -343,7 +414,7 @@ Mrt = -M₀ [sin(δ)cos(λ)cos(2ϕ) + ½ sin(2δ)sin(λ)sin(2ϕ)]
             waveforms.
           </p>
 
-          <h4>4. Waveform Synthesis via Convolution</h4>
+          <h3>6. Waveform Synthesis via Convolution</h3>
           <p>
             The final waveform is a sum of weighted Green’s functions using
             moment tensor components:
@@ -365,7 +436,7 @@ Mrt = -M₀ [sin(δ)cos(λ)cos(2ϕ) + ½ sin(2δ)sin(λ)sin(2ϕ)]
             component.
           </p>
 
-          <h4>5. Synthetic Waveform Equations</h4>
+          <h4>Synthetic Waveform Equations</h4>
           <h5>Vertical (Z):</h5>
           <pre><code>
 Z(t) = Mtt·[½·ZSS·cos(2ϕ) - ZDD/6 + ZEP/3] +
@@ -400,7 +471,7 @@ T(t) = Mtt·[½·TSS·sin(2ϕ)] -
             types.
           </p>
 
-          <h4>6. 3D Visualization</h4>
+          <h3>7. 3D Visualization</h3>
           <p>
             A 3D visualization, implemented via <code>Three.js</code>, assists
             in understanding the spatial relationships:

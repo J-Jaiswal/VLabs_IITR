@@ -231,22 +231,26 @@
               </li>
 
               <li>
-                <p>Changing the azimuth value in the simulation affects:</p>
+                <p>
+                  Synthetic waveforms change as we vary the azimuth value from
+                  source to receiver, due to the following reason (assume 1D
+                  model):
+                </p>
                 <label
-                  ><input type="radio" name="q2" value="A" required /> A. The
-                  depth of the epicenter</label
+                  ><input type="radio" name="q2" value="A" required /> A. Site
+                  effect </label
                 ><br />
                 <label
-                  ><input type="radio" name="q2" value="B" /> B. The color of
-                  the waveform </label
+                  ><input type="radio" name="q2" value="B" /> B. Radiation
+                  pattern </label
                 ><br />
                 <label
-                  ><input type="radio" name="q2" value="C" /> C. The position of
-                  the receiver around the source</label
+                  ><input type="radio" name="q2" value="C" /> C. Geometric
+                  spreading</label
                 ><br />
                 <label
-                  ><input type="radio" name="q2" value="D" /> D. The type of
-                  velocity model used</label
+                  ><input type="radio" name="q2" value="D" /> D. Attenuation due
+                  to wave scattering</label
                 >
               </li>
 
@@ -274,45 +278,38 @@
               </li>
 
               <li>
-                <p>What did the 3D visualization show clearly?</p>
+                <p>
+                  How many (independent) parameters are required to explain a
+                  double couple moment tensor:
+                </p>
                 <label
-                  ><input type="radio" name="q4" value="A" required /> A. Soil
-                  layers</label
+                  ><input type="radio" name="q4" value="A" required /> A.
+                  2</label
                 ><br />
-                <label
-                  ><input type="radio" name="q4" value="B" /> B. Source-receiver
-                  geometry and azimuth arc</label
+                <label><input type="radio" name="q4" value="B" /> B. 3</label
                 ><br />
-                <label
-                  ><input type="radio" name="q4" value="C" /> C. Wave
-                  amplitudes</label
+                <label><input type="radio" name="q4" value="C" /> C. 4</label
                 ><br />
-                <label
-                  ><input type="radio" name="q4" value="D" /> D. Epicenter
-                  color</label
-                >
+                <label><input type="radio" name="q4" value="D" /> D. 6</label>
               </li>
 
               <li>
-                <p>
-                  Why were multiple Green’s functions used per component (Z, R,
-                  T) (e.g., ZSS, ZDD)?
-                </p>
+                <p>What does ZSS component stands for if greens functions:</p>
                 <label
-                  ><input type="radio" name="q5" value="A" required /> A. To
-                  account for different force system contributions</label
+                  ><input type="radio" name="q5" value="A" required /> A.
+                  Vertical response to dip-strike interaction</label
                 ><br />
                 <label
-                  ><input type="radio" name="q5" value="B" /> B. To smooth
-                  data</label
+                  ><input type="radio" name="q5" value="B" /> B. Radial response
+                  to dip-strike interaction</label
                 ><br />
                 <label
-                  ><input type="radio" name="q5" value="C" /> C. To generate
-                  synthetic noise</label
+                  ><input type="radio" name="q5" value="C" /> C. Vertical
+                  response to strike-slip source</label
                 ><br />
                 <label
-                  ><input type="radio" name="q5" value="D" /> D. To reduce time
-                  steps</label
+                  ><input type="radio" name="q5" value="D" /> D. Transverse
+                  response to strike-slip</label
                 >
               </li>
             </ol>
@@ -357,10 +354,10 @@
 
                 const correctAnswers = {
                   q1: "A",
-                  q2: "C",
+                  q2: "B",
                   q3: "A",
-                  q4: "B",
-                  q5: "A",
+                  q4: "C",
+                  q5: "C",
                 };
 
                 let score = 0;
