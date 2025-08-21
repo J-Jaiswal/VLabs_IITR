@@ -1,0 +1,491 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta content="IE=edge" http-equiv="X-UA-Compatible" />
+    <title>Virtual Labs</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      name="viewport"
+    />
+    <!-- Bootstrap 3.3.6 -->
+    <link href="../../bootstrap/css/bootstrap.css" rel="stylesheet" />
+    <!-- Font Awesome -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- Theme style -->
+    <link href="../../dist/css/AdminLTE.css" rel="stylesheet" />
+    <!-- AdminLTE Skins. Choose a skin from the css/skins folder instead of downloading all of them to reduce the load. -->
+    <link href="../../dist/css/skins/_all-skins.min.css" rel="stylesheet" />
+    <script>
+      window.onload = function () {
+        document.getElementById("procedure").className = "active treeview";
+      };
+    </script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        color: #1f2937;
+        background: #fff;
+      }
+      p,
+      li {
+        text-align: justify;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 10px 0 6px;
+        color: #111827;
+      }
+      .card {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 12px 0;
+        background: #fafafa;
+      }
+      .eq {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px 10px;
+        overflow: auto;
+        margin: 8px 0;
+      }
+      code {
+        background: #eef2f7;
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+          "Liberation Mono", monospace;
+      }
+      .muted {
+        color: #6b7280;
+      }
+      .hi {
+        color: #0ea5e9;
+        font-weight: 600;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+      th,
+      td {
+        border: 1px solid #e5e7eb;
+        padding: 8px 10px;
+        text-align: left;
+      }
+      th {
+        background: #f3f4f6;
+      }
+      ul,
+      ol {
+        margin-left: 18px;
+      }
+    </style>
+  </head>
+  <body class="hold-transition skin-blue sidebar-mini">
+    <!--Navigation Bar-->
+    <div class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <button
+            class="navbar-toggle"
+            data-target="#navbar-ex-collapse"
+            data-toggle="collapse"
+            type="button"
+          >
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="http://iitb.ac.in"
+            ><span
+              ><img
+                src="images/iitrLogo.png"
+                style="margin-top: -15px; height: 50px; width: 400px" /></span
+          ></a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-ex-collapse"></div>
+      </div>
+    </div>
+    <div class="wrapper">
+      <header class="main-header">
+        <!-- Logo -->
+        <a
+          class="logo"
+          href="../index.html"
+          style="
+            background-color: #009dff;
+            border-right: solid;
+            border-right-color: #1261a0;
+          "
+        >
+          <p align="center" style="font-size: 1em">Geophysics Lab</p>
+        </a>
+        <!-- Header Navbar: style can be found in header.less -->
+        <nav class="navbar navbar-static-top" style="background-color: #009dff">
+          <!-- Sidebar toggle button-->
+          <a
+            class="sidebar-toggle"
+            data-toggle="offcanvas"
+            href="#"
+            id="toggle_nav"
+            role="button"
+          >
+            <span class="sr-only">Toggle navigation</span>
+          </a>
+          <section class="content-header">
+            <ol class="breadcrumb">
+              <li>
+                <a href="../index.html"
+                  ><i class="fa fa-dashboard"></i>Geophysics Lab
+                  <!-- Write lab name here -->
+                </a>
+              </li>
+              <li>
+                <a href="#"
+                  >Finding location of an earthquake
+                  <!-- Write experiment name here -->
+                </a>
+              </li>
+              <li class="active">Procedure</li>
+            </ol>
+          </section>
+        </nav>
+      </header>
+      <!-- Left side column. contains the logo and sidebar -->
+      <aside class="main-sidebar" style="background-color: #1261a0">
+        <!-- sidebar: style can be found in sidebar.less -->
+        <section class="sidebar">
+          <!-- search form -->
+          <form action="#" class="sidebar-form" method="get">
+            <div class="input-group"></div>
+          </form>
+          <!-- /.sear ch form -->
+          <!-- sidebar menu: : style can be found in sidebar.less -->
+          <ul class="sidebar-menu" style="background-color: #1261a0">
+            <li class="treeview" id="aim">
+              <a href="index.html" id="aim">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Aim</span>
+              </a>
+            </li>
+            <li class="treeview" id="theory">
+              <a href="theory.html" id="theory">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Theory</span>
+              </a>
+            </li>
+            <!--   <li class="treeview" id="numerical">
+                    <a href="numerical.php">
+                        <i class="fa fa-laptop"></i>
+                        <span>Numerical</span>
+                        <span class="pull-right-container">
+                        </span>
+                    </a>
+                </li>
+                <li class="treeview" id="program">
+                    <a href="program.php">
+                        <i class="fa fa-laptop"></i>
+                        <span>Program</span>
+                        <span class="pull-right-container">
+                        </span>
+                    </a>
+                </li> -->
+            <li class="treeview" id="pretest">
+              <a href="pretest.html" id="pretest">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Pre Test</span>
+              </a>
+            </li>
+            <li class="treeview" id="procedure">
+              <a href="procedure.html" id="procedure">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Procedure</span>
+              </a>
+            </li>
+            <li class="treeview" id="simulation">
+              <a href="simulation.html" id="simulation">
+                <i class="fa fa-laptop" style="color: white"></i>
+                <span style="color: white">Simulation</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+            <li class="treeview" id="posttest">
+              <a href=" posttest.html" id="posttest">
+                <i class="fa fa-files-o" style="color: white"> </i>
+                <span style="color: white">Post Test</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+            <li class="treeview" id="ref">
+              <a href="references.html" id="references">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">References</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+          </ul>
+        </section>
+        <!-- /.sidebar -->
+      </aside>
+      <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+          <h1 align="center">
+            Finding location of an earthquake
+            <!-- Write experiment name here -->
+          </h1>
+        </section>
+        <!-- Main content -->
+        <section class="content">
+          <div class="card">
+            <h2>Learning goals</h2>
+            <ul>
+              <li>
+                See how station layout, noise, and assumed velocity change
+                accuracy and stability.
+              </li>
+              <li>
+                Read the misfit map, convergence (RMS) curve, and the 1-σ
+                uncertainty ellipse.
+              </li>
+              <li>
+                Use damping <code>λ</code> to keep the solution stable when
+                geometry/noise is bad.
+              </li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>Controls</h2>
+            <ul style="list-style: none; padding-left: 0; margin: 0">
+              <li style="margin: 8px 0">
+                <strong># Stations</strong> — how many receivers you place.
+                <span class="muted"
+                  >Use ≥ 4. A wide spread around the source beats just adding
+                  more.</span
+                >
+              </li>
+              <li style="margin: 8px 0">
+                <strong>Event (X, Y, Z)</strong> — the “true” earthquake you set
+                for the simulator.
+                <span class="muted"
+                  >Used to generate the synthetic arrival times.</span
+                >
+              </li>
+              <li style="margin: 8px 0">
+                <strong><code>v</code><sub>true</sub></strong> — velocity for
+                generating data.
+                <span class="muted"
+                  >Represents the real Earth in this demo.</span
+                >
+              </li>
+              <li style="margin: 8px 0">
+                <strong><code>v</code><sub>start</sub></strong> — velocity used
+                by the inversion and the misfit scan.
+                <span class="muted"
+                  >If wrong, the estimate can be biased even if RMS looks
+                  small.</span
+                >
+              </li>
+              <li style="margin: 8px 0">
+                <strong><code>σ</code></strong> — Gaussian noise level on picks
+                (seconds).
+                <span class="muted"
+                  >Higher <code>σ</code> ⇒ bigger ellipse and slower/messier
+                  convergence.</span
+                >
+              </li>
+              <li style="margin: 8px 0">
+                <strong>Outlier</strong> — optionally add one bad pick.
+                <span class="muted"
+                  >Good for testing robustness; can destabilize the
+                  solver.</span
+                >
+              </li>
+              <li style="margin: 8px 0">
+                <strong><code>λ</code></strong> — damping strength.
+                <span class="muted"
+                  >Larger <code>λ</code> stabilizes updates but can slow
+                  movement toward the answer.</span
+                >
+              </li>
+              <li style="margin: 8px 0">
+                <strong>Add / Drag / Remove</strong> — network design tools.
+                <span class="muted"
+                  >Controls resolution and the condition number of the
+                  problem.</span
+                >
+              </li>
+            </ul>
+          </div>
+          <div class="card">
+            <h2>Experiments to perform</h2>
+            <ol>
+              <li>
+                <strong>Baseline:</strong> good geometry,
+                <code>v_{true}=v_{start}</code>, small <code>σ</code>. Expect a
+                centered bowl, small ellipse, quick convergence.
+              </li>
+              <li>
+                <strong>Velocity bias:</strong> fix geometry; set
+                <code>v_{start} ≠ v_{true}</code>. The misfit bowl shifts;
+                estimate is biased.
+              </li>
+              <li>
+                <strong>Noise test:</strong> raise <code>σ</code> to 0.2–0.3 s.
+                Ellipse grows; RMS flattens.
+              </li>
+              <li>
+                <strong>Outlier test:</strong> add a mild/strong outlier.
+                Increase <code>λ</code> to stabilize.
+              </li>
+              <li>
+                <strong>Geometry test:</strong> line up or cluster stations.
+                <code>cond(G)</code> rises; ellipse elongates.
+              </li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <h2>Step-by-step workflow</h2>
+
+            <h3>1) Set up the stations</h3>
+            <ol>
+              <li>
+                Place 6–8 stations and drag them to surround the expected source
+                (avoid a straight line).
+              </li>
+              <li>
+                Aim to reduce <code>cond(G)</code> (better azimuthal coverage ⇒
+                more stable inversion).
+              </li>
+            </ol>
+
+            <h3>2) Choose the “true Earth” and a starting guess</h3>
+            <ol>
+              <li>
+                Set <strong>Event (X, Y, Z)</strong>,
+                <strong><code>v</code><sub>true</sub></strong
+                >, and noise <strong><code>σ</code></strong
+                >.
+              </li>
+              <li>
+                Pick <strong><code>v</code><sub>start</sub></strong> for
+                inversion; start with <code>v_{start}=v_{true}</code> to build
+                intuition.
+              </li>
+            </ol>
+
+            <h3>3) Run and read the plots</h3>
+            <ol>
+              <li>
+                Click <strong>Run</strong>. Each iteration:
+                <ul>
+                  <li>
+                    <strong>Predicts</strong> the arrival times for all stations
+                    from the current guess of the source location, origin time,
+                    and velocity.
+                  </li>
+                  <li>
+                    <strong>Compares</strong> predictions with the observed
+                    picks to get the mismatch for each station and an overall
+                    RMS (average error).
+                  </li>
+                  <li>
+                    <strong>Figures out sensitivities</strong>—which parameters
+                    (x, y, z, origin time, velocity) would reduce the error the
+                    most if nudged.
+                  </li>
+                  <li>
+                    <strong>Updates the model</strong> gently using damping so
+                    changes are stable and don’t overreact to noise/outliers.
+                  </li>
+                  <li>
+                    <strong>Repeats</strong> until the change is tiny or a set
+                    number of steps is reached.
+                  </li>
+                </ul>
+                <ul class="muted" style="margin-top: 6px">
+                  <li>
+                    <strong>Good signs:</strong> RMS drops most steps, the blue
+                    estimate settles, and updates get smaller.
+                  </li>
+                  <li>
+                    <strong>Warnings:</strong> RMS stalls or rises, the estimate
+                    jumps around, or the problem looks ill-conditioned—try
+                    spreading stations out or increasing damping.
+                  </li>
+                </ul>
+              </li>
+
+              <li>
+                <em>Misfit map:</em> The app scans many possible epicenters
+                using the chosen start velocity. For each point it picks the
+                best origin time and colors the map by how well it fits.
+                <p class="muted">
+                  Look for a bright “bowl.” Its center is the best epicenter for
+                  that fixed velocity. If the bowl sits away from the true (red)
+                  point, your start velocity is likely off. A long, skinny bowl
+                  means poor station geometry.
+                </p>
+              </li>
+
+              <li>
+                <em>Map:</em> Red is the true source, blue is the current
+                estimate, and the purple dashed ellipse shows the model’s
+                horizontal uncertainty.
+                <p class="muted">
+                  A bigger ellipse means lower confidence. Its orientation
+                  points along the direction your network constrains poorly. You
+                  can shrink it by adding/spreading stations to improve
+                  coverage.
+                </p>
+              </li>
+
+              <li>
+                <em>Convergence:</em> The RMS vs iteration plot should generally
+                go down.
+                <p class="muted">
+                  If it stalls: increase damping, move/add stations for better
+                  coverage, remove the outlier/noise, or choose a better start
+                  velocity.
+                </p>
+              </li>
+            </ol>
+          </div>
+        </section>
+
+        <!-- /.content -->
+      </div>
+      <footer class="main-footer">
+        <h4 align="center">
+          Lab contributed by IIT Roorkee
+          <!-- Institute Name -->
+        </h4>
+      </footer>
+    </div>
+  </body>
+</html>
+<!-- ./wrapper -->
+<!-- jQuery 2.2.3 -->
+<script src="../../plugins/jQuery/jquery-2.2.3.min.js"></script>
+<!-- jQuery UI 1.11.4 -->
+<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+<!-- Bootstrap 3.3.6 -->
+<script src="../../bootstrap/js/bootstrap.min.js"></script>
+<!-- Slimscroll -->
+<script src="../../plugins/slimScroll/jquery.slimscroll.min.js"></script>
+<!-- FastClick -->
+<script src="../../plugins/fastclick/fastclick.js"></script>
+<!-- AdminLTE App -->
+<script src="../../dist/js/app.min.js"></script>

@@ -1,0 +1,418 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Virtual Labs</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      name="viewport"
+    />
+    <!-- Bootstrap 3.3.6 -->
+    <link rel="stylesheet" href="../../bootstrap/css/bootstrap.css" />
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.5.0/css/font-awesome.min.css"
+    />
+    <!-- Theme style -->
+    <link rel="stylesheet" href="../../dist/css/AdminLTE.css" />
+    <!-- AdminLTE Skins. Choose a skin from the css/skins folder instead of downloading all of them to reduce the load. -->
+    <link rel="stylesheet" href="../../dist/css/skins/_all-skins.min.css" />
+    <script>
+      window.onload = function () {
+        document.getElementById("theory").className = "active treeview";
+      };
+    </script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        color: #1f2937;
+        background: #fff;
+      }
+      p,
+      li {
+        text-align: justify;
+      }
+      h1,
+      h2,
+      h3 {
+        margin: 10px 0 6px;
+        color: #111827;
+      }
+      .card {
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 12px 0;
+        background: #fafafa;
+      }
+      .eq {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px 10px;
+        overflow: auto;
+        margin: 8px 0;
+      }
+      code {
+        background: #eef2f7;
+        padding: 2px 6px;
+        border-radius: 6px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
+          "Liberation Mono", monospace;
+      }
+      .muted {
+        color: #6b7280;
+      }
+      .hi {
+        color: #0ea5e9;
+        font-weight: 600;
+      } /* accent highlight */
+      .warn {
+        color: #a855f7;
+        font-weight: 600;
+      } /* uncertainty highlight */
+      ul,
+      ol {
+        margin-left: 18px;
+      }
+    </style>
+  </head>
+
+  <body class="hold-transition skin-blue sidebar-mini">
+    <!--Navigation Bar-->
+    <div class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header">
+          <button
+            type="button"
+            class="navbar-toggle"
+            data-toggle="collapse"
+            data-target="#navbar-ex-collapse"
+          >
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="http://iitb.ac.in"
+            ><span
+              ><img
+                src="images/iitrLogo.png"
+                style="margin-top: -15px; height: 50px; width: 400px" /></span
+          ></a>
+        </div>
+        <div class="collapse navbar-collapse" id="navbar-ex-collapse"></div>
+      </div>
+    </div>
+
+    <div class="wrapper">
+      <header class="main-header">
+        <!-- Logo -->
+        <a
+          href="../index.html"
+          class="logo"
+          style="
+            background-color: #009dff;
+            border-right: solid;
+            border-right-color: #1261a0;
+          "
+        >
+          <p align="center" style="font-size: 1em"><b>Geophysics Lab</b></p>
+        </a>
+        <!-- Header Navbar: style can be found in header.less -->
+        <nav class="navbar navbar-static-top" style="background-color: #009dff">
+          <!-- Sidebar toggle button-->
+          <a
+            href="#"
+            class="sidebar-toggle"
+            data-toggle="offcanvas"
+            role="button"
+            id="toggle_nav"
+          >
+            <span class="sr-only">Toggle navigation</span>
+          </a>
+          <section class="content-header">
+            <ol class="breadcrumb">
+              <li>
+                <a href="../index.html"
+                  ><i class="fa fa-dashboard"></i>Geophysics Lab</a
+                >
+              </li>
+              <li>
+                <a href="#">Finding location of an earthquake</a>
+              </li>
+            </ol>
+          </section>
+        </nav>
+      </header>
+
+      <!-- Left side column. contains the logo and sidebar -->
+      <aside class="main-sidebar" style="background-color: #1261a0">
+        <!-- sidebar: style can be found in sidebar.less -->
+        <section class="sidebar">
+          <!-- search form -->
+          <form action="#" method="get" class="sidebar-form">
+            <div class="input-group"></div>
+          </form>
+          <!-- /.sear ch form -->
+          <!-- sidebar menu: : style can be found in sidebar.less -->
+          <ul class="sidebar-menu" style="background-color: #1261a0">
+            <li class="treeview" id="aim">
+              <a href="index.html" id="aim">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Aim</span>
+              </a>
+            </li>
+            <li class="treeview" id="theory">
+              <a href="theory.html" id="theory" onclick="theory()">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Theory</span>
+              </a>
+            </li>
+            <!--   <li class="treeview" id="numerical">
+                    <a href="numerical.php">
+                        <i class="fa fa-laptop"></i>
+                        <span>Numerical</span>
+                        <span class="pull-right-container">
+                        </span>
+                    </a>
+                </li>
+                <li class="treeview" id="program">
+                    <a href="program.php">
+                        <i class="fa fa-laptop"></i>
+                        <span>Program</span>
+                        <span class="pull-right-container">
+                        </span>
+                    </a>
+                </li> -->
+            <li class="treeview" id="pretest">
+              <a href="pretest.html" id="pretest">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Pre Test</span>
+              </a>
+            </li>
+
+            <li class="treeview" id="procedure">
+              <a href="procedure.html" id="procedure">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">Procedure</span>
+              </a>
+            </li>
+            <li class="treeview" id="simulation">
+              <a href="simulation.html" id="simulation">
+                <i class="fa fa-laptop" style="color: white"></i>
+                <span style="color: white">Simulation</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+
+            <li class="treeview" id="posttest">
+              <a href=" posttest.html" id="posttest">
+                <i class="fa fa-files-o" style="color: white"> </i>
+                <span style="color: white">Post Test</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+            <li class="treeview" id="ref">
+              <a href="references.html" id="references">
+                <i class="fa fa-files-o" style="color: white"></i>
+                <span style="color: white">References</span>
+                <span class="pull-right-container"> </span>
+              </a>
+            </li>
+          </ul>
+        </section>
+        <!-- /.sidebar -->
+      </aside>
+
+      <div class="content-wrapper">
+        <section class="content-header">
+          <h1 align="center">Finding location of an earthquake</h1>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+          <!-- <p class="muted" style="text-align: center; margin-top: 0">
+            Gauss–Newton inversion with Tikhonov damping, SVD diagnostics,
+            misfit scan, and linearized uncertainty.
+          </p> -->
+
+          <div class="card">
+            <h2>What this models</h2>
+            <p>
+              We simulate P-wave picks from an earthquake at
+              <code>m = [x_s, y_s, z_s, t_0, v]</code> recorded at stations
+              <code>(x_i, y_i, z_i)</code> in a homogeneous medium (constant
+              <code>v</code>). Picks are noisy (Gaussian, std <code>σ</code>)
+              and may include one outlier for robustness demos.
+            </p>
+            <ul>
+              <li>
+                Distance:
+                <code
+                  >R_i = sqrt((x_i - x_s)^2 + (y_i - y_s)^2 + (z_i -
+                  z_s)^2)</code
+                >
+              </li>
+              <li>Residual: <code>r_i = t_i^{obs} - g_i(m)</code></li>
+              <li class="muted">
+                Units: km (distance), s (time), km/s (velocity)
+              </li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h2>Forward model</h2>
+            <div class="eq">
+              <code>g_i(m) = t_0 + R_i / v</code><br />
+              <code
+                >R_i = sqrt((x_i - x_s)^2 + (y_i - y_s)^2 + (z_i - z_s)^2)</code
+              >
+            </div>
+            <p>
+              Synthetic observations (with noise and optional single outlier):
+            </p>
+            <div class="eq">
+              <code
+                >t_i^{obs} = t_0^{true} + R_i(s_{true}) / v_{true} + ε_i +
+                δ_i^{outlier}</code
+              ><br />
+              <code>ε_i ~ 𝓝(0, σ^2)</code>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>
+              Misfit map (epicentral scan with fixed
+              <span class="hi">v<sub>start</sub></span
+              >)
+            </h2>
+            <p>
+              For every grid point <code>(x,y)</code> (with depth fixed in the
+              scan), minimize over origin time:
+            </p>
+            <div class="eq">
+              <code
+                >t_0^*(x,y) = (1/N) Σ_i [ t_i^{obs} - R_i(x,y,0) / v_{start}
+                ]</code
+              >
+            </div>
+            <p>The displayed scalar is mean squared misfit:</p>
+            <div class="eq">
+              <code
+                >J(x,y) = (1/N) Σ_i [ t_i^{obs} - ( t_0^*(x,y) + R_i(x,y,0) /
+                v_{start} ) ]^2</code
+              >
+            </div>
+            <p class="muted">
+              Brighter basin ⇒ better fit under the assumed velocity; wrong
+              <code>v_{start}</code> shifts/skews the bowl.
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>Inverse problem (Gauss–Newton + Tikhonov)</h2>
+            <p>
+              We minimize a damped least-squares objective with constant data
+              weight <code>W = σ^{-1} I</code>:
+            </p>
+            <div class="eq">
+              <code>Φ(m) = || W ( d - g(m) ) ||_2^2 + λ^2 || m ||_2^2</code>
+            </div>
+            <p>
+              Linearizing about the current estimate <code>m^(k)</code> gives
+            </p>
+            <div class="eq">
+              <code>((WG)^T (WG) + λ^2 I) Δm = (WG)^T W ( d - g(m^(k)) )</code>
+            </div>
+            <p>Jacobian row for station <code>i</code>:</p>
+            <div class="eq">
+              <code
+                >[ ∂g/∂x_s, ∂g/∂y_s, ∂g/∂z_s, ∂g/∂t_0, ∂g/∂v ] = [ (x_s -
+                x_i)/(v R_i), (y_s - y_i)/(v R_i), (z_s - z_i)/(v R_i), 1,
+                -R_i/v^2 ]</code
+              >
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>SVD solution &amp; conditioning</h2>
+            <p>
+              With <code>WG = U S V^T</code>, use the stabilized SVD filter:
+            </p>
+            <div class="eq">
+              <code>Δm = V diag( s / (s^2 + λ^2) ) U^T W ( d - g(m) )</code>
+            </div>
+            <p class="muted">
+              Geometry diagnostic: <code>cond(G) = s_max / s_min</code> (smaller
+              is better).
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>Uncertainty (1-σ ellipse)</h2>
+            <p>Linearized covariance (scaled by noise variance):</p>
+            <div class="eq">
+              <code>Cov(m) ≈ σ^2 · V · diag( 1/(s^2 + λ^2) ) · V^T</code>
+            </div>
+            <p>
+              Extract the <code>(x_s, y_s)</code> block <code>C_xy</code>,
+              eigendecompose to get <code>a = sqrt(λ₁)</code>,
+              <code>b = sqrt(λ₂)</code> and orientation from the first
+              eigenvector (purple dashed ellipse in the app).
+            </p>
+          </div>
+
+          <div class="card">
+            <h2>Notes :</h2>
+            <ul>
+              <li>
+                <span class="hi">Geometry matters:</span> spread stations around
+                the source to reduce <code>cond(G)</code> and shrink the
+                ellipse.
+              </li>
+              <li>
+                <span class="hi">Velocity bias:</span> if
+                <code>v_{start} ≠ v_{true}</code>, solutions shift even for
+                small RMS.
+              </li>
+              <li class="muted">
+                Assumes constant velocity, linearized uncertainties, and
+                stations at <code>z=0</code> (depth is weakly constrained).
+              </li>
+            </ul>
+          </div>
+        </section>
+      </div>
+
+      <footer class="main-footer">
+        <h4 align="center">
+          Lab contributed by IIT Roorkee
+          <!-- Institute Name -->
+        </h4>
+      </footer>
+    </div>
+  </body>
+</html>
+<script>
+  function theory() {
+    document.getElementById("theory").style.backgroundColor = "#009dff";
+  }
+</script>
+<!-- ./wrapper -->
+<!-- jQuery 2.2.3 -->
+<script src="../../plugins/jQuery/jquery-2.2.3.min.js"></script>
+<!-- jQuery UI 1.11.4 -->
+<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+<!-- Bootstrap 3.3.6 -->
+<script src="../../bootstrap/js/bootstrap.min.js"></script>
+<!-- Slimscroll -->
+<script src="../../plugins/slimScroll/jquery.slimscroll.min.js"></script>
+<!-- FastClick -->
+<script src="../../plugins/fastclick/fastclick.js"></script>
+<!-- AdminLTE App -->
+<script src="../../dist/js/app.min.js"></script>
