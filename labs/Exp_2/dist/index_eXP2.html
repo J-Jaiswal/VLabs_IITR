@@ -91,10 +91,10 @@
     <div class="container py-4">
       <div class="mb-3">
         <h3 class="mb-1">Earthquake Location Simulator</h3>
-        <div class="hint">
+        <!-- <div class="hint">
           Drag stations, add/remove stations, adjust noise/velocity, and watch
           the inversion converge with uncertainties.
-        </div>
+        </div> -->
       </div>
 
       <!-- Controls -->
@@ -102,7 +102,7 @@
         <h5>Inputs</h5>
         <div class="ctrl">
           <div>
-            <label class="small-label"># Stations</label>
+            <label class="small-label">Stations</label>
             <input
               id="numStations"
               type="number"
@@ -121,7 +121,7 @@
             <input id="yInput" type="number" class="form-control" value="5" />
           </div>
           <div>
-            <label class="small-label">Event Z (km, down+)</label>
+            <label class="small-label">Event Z (km)</label>
             <input id="zInput" type="number" class="form-control" value="0" />
           </div>
           <div>
@@ -170,7 +170,7 @@
             />
           </div>
           <div>
-            <label class="small-label">Outlier?</label>
+            <label class="small-label">Outlier</label>
             <!-- NEW: outlier toggle -->
             <select id="outlier" class="form-select">
               <option value="none" selected>None</option>
