@@ -206,8 +206,8 @@
           event
           <span class="legend-swatch" style="background: #0ea5e9"></span
           >Estimated event (after inversion)
-          <span class="legend-swatch" style="background: #a78bfa"></span>1-σ
-          ellipse
+          <!-- <span class="legend-swatch" style="background: #a78bfa"></span>1-σ
+          ellipse -->
         </div>
       </div>
 
@@ -225,6 +225,8 @@
                 </button>
               </div>
             </div>
+
+            <!-- KPIs (re-enabled so JS can write into them) -->
             <div class="row mt-2 gx-3">
               <div class="col">
                 <div class="kpi">Iterations: <strong id="kIter">—</strong></div>
@@ -233,10 +235,10 @@
                 </div>
               </div>
               <div class="col">
-                <div class="kpi">cond(G): <strong id="kCond">—</strong></div>
                 <div class="kpi">λ: <strong id="kLambda">—</strong></div>
               </div>
             </div>
+
             <div class="hint mt-2">
               Alt/Option+click a station to remove it.
             </div>
