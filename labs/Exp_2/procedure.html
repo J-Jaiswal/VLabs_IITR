@@ -248,110 +248,83 @@
         <!-- Main content -->
         <section class="content">
           <div class="card">
-            <h2>Learning goals</h2>
-            <ul>
-              <li>
-                See how station layout, noise, and assumed velocity change
-                accuracy and stability.
+            <h2>UI Controls</h2>
+            <ul style="list-style: none; padding-left: 0; margin: 0">
+              <li style="margin: 8px 0">
+                <strong>Stations</strong> — how many receivers to place when you
+                click <b>Generate</b>.
+                <span class="muted"
+                  >Use at least 4. It’s better if stations surround the source
+                  instead of sitting in a line.</span
+                >
               </li>
-              <li>
-                Read the misfit map, convergence (RMS) curve, and the 1-σ
-                uncertainty ellipse.
+              <li style="margin: 8px 0">
+                <strong>Event (X, Y, Z)</strong> — the “real” earthquake we use
+                to make fake (synthetic) picks. >
               </li>
-              <li>
-                Use damping <code>λ</code> to keep the solution stable when
-                geometry/noise is bad.
+              <li style="margin: 8px 0">
+                <strong><code>v</code><sub>true</sub></strong> — velocity used
+                to create the synthetic data.
+              </li>
+              <li style="margin: 8px 0">
+                <strong><code>v</code><sub>start</sub></strong> — velocity
+                assumed by the solver and the misfit map.
+              </li>
+              <li style="margin: 8px 0">
+                <strong><code>σ</code></strong> — noise level on the picks
+                (seconds).
+              </li>
+              <li style="margin: 8px 0">
+                <strong>Outlier</strong> — add one bad pick (mild ±3σ or strong
+                ±6σ).
+              </li>
+              <li style="margin: 8px 0">
+                <strong><code>λ</code></strong> — Tikhonov damping.
+                <span class="muted"
+                  >Bigger <code>λ</code> makes steps safer/smoother but slower,
+                  and can add small bias.</span
+                >
+              </li>
+              <li style="margin: 8px 0">
+                <strong>Generate / Run / Reset</strong> — main buttons.
+                <span class="muted"
+                  ><b>Generate</b> places stations, <b>Run</b> solves for
+                  [x,y,z,t<sub>0</sub>,v], <b>Reset</b> clears and loads
+                  defaults.</span
+                >
               </li>
             </ul>
           </div>
 
           <div class="card">
-            <h2>Controls</h2>
-            <ul style="list-style: none; padding-left: 0; margin: 0">
-              <li style="margin: 8px 0">
-                <strong># Stations</strong> — how many receivers you place.
-                <span class="muted"
-                  >Use ≥ 4. A wide spread around the source beats just adding
-                  more.</span
-                >
-              </li>
-              <li style="margin: 8px 0">
-                <strong>Event (X, Y, Z)</strong> — the “true” earthquake you set
-                for the simulator.
-                <span class="muted"
-                  >Used to generate the synthetic arrival times.</span
-                >
-              </li>
-              <li style="margin: 8px 0">
-                <strong><code>v</code><sub>true</sub></strong> — velocity for
-                generating data.
-                <span class="muted"
-                  >Represents the real Earth in this demo.</span
-                >
-              </li>
-              <li style="margin: 8px 0">
-                <strong><code>v</code><sub>start</sub></strong> — velocity used
-                by the inversion and the misfit scan.
-                <span class="muted"
-                  >If wrong, the estimate can be biased even if RMS looks
-                  small.</span
-                >
-              </li>
-              <li style="margin: 8px 0">
-                <strong><code>σ</code></strong> — Gaussian noise level on picks
-                (seconds).
-                <span class="muted"
-                  >Higher <code>σ</code> ⇒ bigger ellipse and slower/messier
-                  convergence.</span
-                >
-              </li>
-              <li style="margin: 8px 0">
-                <strong>Outlier</strong> — optionally add one bad pick.
-                <span class="muted"
-                  >Good for testing robustness; can destabilize the
-                  solver.</span
-                >
-              </li>
-              <li style="margin: 8px 0">
-                <strong><code>λ</code></strong> — damping strength.
-                <span class="muted"
-                  >Larger <code>λ</code> stabilizes updates but can slow
-                  movement toward the answer.</span
-                >
-              </li>
-              <li style="margin: 8px 0">
-                <strong>Add / Drag / Remove</strong> — network design tools.
-                <span class="muted"
-                  >Controls resolution and the condition number of the
-                  problem.</span
-                >
-              </li>
-            </ul>
-          </div>
-          <div class="card">
-            <h2>Experiments to perform</h2>
+            <h2>Things to test</h2>
             <ol>
               <li>
-                <strong>Baseline:</strong> good geometry,
-                <code>v_{true}=v_{start}</code>, small <code>σ</code>. Expect a
-                centered bowl, small ellipse, quick convergence.
+                <strong>Baseline:</strong> Good station spread,
+                <code>v<sub>true</sub>=v<sub>start</sub></code
+                >, small <code>σ</code>. You should see a centered low-error
+                region and the RMS (average error) drops quickly.
+              </li>
+
+              <li>
+                <strong>Velocity bias:</strong> Keep stations the same but make
+                <code>v<sub>start</sub> ≠ v<sub>true</sub></code
+                >. The low-error area moves, so the location shifts (bias) even
+                if RMS looks small.
               </li>
               <li>
-                <strong>Velocity bias:</strong> fix geometry; set
-                <code>v_{start} ≠ v_{true}</code>. The misfit bowl shifts;
-                estimate is biased.
+                <strong>Noise test:</strong> Increase <code>σ</code> to ~0.2–0.3
+                s. RMS finishes higher, the estimate wiggles more, and
+                uncertainty grows.
               </li>
               <li>
-                <strong>Noise test:</strong> raise <code>σ</code> to 0.2–0.3 s.
-                Ellipse grows; RMS flattens.
+                <strong>Outlier test:</strong> Add a mild/strong outlier. Turn
+                up <code>λ</code> until the solution becomes steady again.
               </li>
               <li>
-                <strong>Outlier test:</strong> add a mild/strong outlier.
-                Increase <code>λ</code> to stabilize.
-              </li>
-              <li>
-                <strong>Geometry test:</strong> line up or cluster stations.
-                <code>cond(G)</code> rises; ellipse elongates.
+                <strong>Geometry test:</strong> Regenerate until stations are
+                almost in a line or clumped. Expect a stretched uncertainty
+                shape and slower, less reliable convergence.
               </li>
             </ol>
           </div>
@@ -359,107 +332,90 @@
           <div class="card">
             <h2>Step-by-step workflow</h2>
 
-            <h3>1) Set up the stations</h3>
+            <h3>1) Place stations</h3>
             <ol>
               <li>
-                Place 6–8 stations and drag them to surround the expected source
-                (avoid a straight line).
+                Choose <b> Stations</b> and click <b>Generate</b> to place a
+                random network.
               </li>
               <li>
-                Aim to reduce <code>cond(G)</code> (better azimuthal coverage ⇒
-                more stable inversion).
+                If needed, click again until stations surround the expected
+                source area (good spread).
               </li>
             </ol>
 
-            <h3>2) Choose the “true Earth” and a starting guess</h3>
+            <h3>2) Set the “true Event" and the starting guess</h3>
             <ol>
               <li>
-                Set <strong>Event (X, Y, Z)</strong>,
-                <strong><code>v</code><sub>true</sub></strong
-                >, and noise <strong><code>σ</code></strong
-                >.
+                Set the true <b>Event (X, Y, Z)</b>,
+                <b><code>v</code><sub>true</sub></b
+                >, and noise <b><code>σ</code></b
+                >. You can also add an <b>Outlier</b>.
               </li>
               <li>
-                Pick <strong><code>v</code><sub>start</sub></strong> for
-                inversion; start with <code>v_{start}=v_{true}</code> to build
-                intuition.
+                Set <b><code>v</code><sub>start</sub></b> for the solver and
+                misfit map (start with
+                <code>v<sub>start</sub>=v<sub>true</sub></code
+                >).
               </li>
             </ol>
 
-            <h3>3) Run and read the plots</h3>
+            <h3>3) Run the inversion and read the plots</h3>
             <ol>
               <li>
-                Click <strong>Run</strong>. Each iteration:
+                Click <b>Run</b>. Each iteration the solver:
                 <ul>
                   <li>
-                    <strong>Predicts</strong> the arrival times for all stations
-                    from the current guess of the source location, origin time,
-                    and velocity.
+                    <b>Predicts</b> arrival times from the current guess
+                    <span class="math">[x_s,y_s,z_s,t_0,v]</span>.
                   </li>
                   <li>
-                    <strong>Compares</strong> predictions with the observed
-                    picks to get the mismatch for each station and an overall
-                    RMS (average error).
+                    <b>Computes residuals</b> (observed − predicted) and updates
+                    RMS.
                   </li>
                   <li>
-                    <strong>Figures out sensitivities</strong>—which parameters
-                    (x, y, z, origin time, velocity) would reduce the error the
-                    most if nudged.
+                    <b>Builds</b> a sensitivity matrix (Jacobian) and takes a
+                    damped Gauss–Newton step.
                   </li>
                   <li>
-                    <strong>Updates the model</strong> gently using damping so
-                    changes are stable and don’t overreact to noise/outliers.
-                  </li>
-                  <li>
-                    <strong>Repeats</strong> until the change is tiny or a set
-                    number of steps is reached.
-                  </li>
-                </ul>
-                <ul class="muted" style="margin-top: 6px">
-                  <li>
-                    <strong>Good signs:</strong> RMS drops most steps, the blue
-                    estimate settles, and updates get smaller.
-                  </li>
-                  <li>
-                    <strong>Warnings:</strong> RMS stalls or rises, the estimate
-                    jumps around, or the problem looks ill-conditioned—try
-                    spreading stations out or increasing damping.
+                    <b>Updates</b> the model until changes are tiny or we hit
+                    the max iterations.
                   </li>
                 </ul>
               </li>
-
               <li>
-                <em>Misfit map:</em> The app scans many possible epicenters
-                using the chosen start velocity. For each point it picks the
-                best origin time and colors the map by how well it fits.
-                <p class="muted">
-                  Look for a bright “bowl.” Its center is the best epicenter for
-                  that fixed velocity. If the bowl sits away from the true (red)
-                  point, your start velocity is likely off. A long, skinny bowl
-                  means poor station geometry.
-                </p>
+                <em>Map view:</em> triangles = stations (amber ring = outlier
+                station if any); big star = true source; small star = current
+                estimate. Watch the small star move toward the big one.
               </li>
-
               <li>
-                <em>Map:</em> Red is the true source, blue is the current
-                estimate, and the purple dashed ellipse shows the model’s
-                horizontal uncertainty.
-                <p class="muted">
-                  A bigger ellipse means lower confidence. Its orientation
-                  points along the direction your network constrains poorly. You
-                  can shrink it by adding/spreading stations to improve
-                  coverage.
-                </p>
+                <em>Misfit map:</em> a 2D scan that shows where errors are
+                smallest. Bright area = lower mean-square error. If it’s not
+                over the true star, your <code>v<sub>start</sub></code> is
+                probably off.
               </li>
-
               <li>
-                <em>Convergence:</em> The RMS vs iteration plot should generally
-                go down.
-                <p class="muted">
-                  If it stalls: increase damping, move/add stations for better
-                  coverage, remove the outlier/noise, or choose a better start
-                  velocity.
-                </p>
+                <em>Convergence:</em> RMS vs iteration should go down and settle
+                near the noise level. If it bounces or rises, increase
+                <code>λ</code> or use a better station spread/start velocity.
+              </li>
+            </ol>
+
+            <h3>4) Tune and repeat</h3>
+            <ol>
+              <li>
+                If the updates look jumpy or the estimate keeps drifting,
+                increase
+                <b><code>λ</code></b> and run again.
+              </li>
+              <li>
+                If the low-error region looks stretched or not centered on the
+                true star, regenerate stations so they surround the source
+                better.
+              </li>
+              <li>
+                Try <code>v<sub>start</sub> ≠ v<sub>true</sub></code> to see how
+                using the wrong velocity shifts (biases) the location.
               </li>
             </ol>
           </div>

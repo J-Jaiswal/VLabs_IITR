@@ -237,213 +237,478 @@
         <!-- Main content -->
         <section class="content">
           <div class="card">
-            <h2>What this models</h2>
-            <p>
-              We simulate first-arrival (P-wave) picks from an earthquake with
-              model
-              <em>m</em> = [<em>x</em><sub>s</sub>, <em>y</em><sub>s</sub>,
-              <em>t</em><sub>0</sub>, <em>v</em>], recorded at stations (<em
-                >x</em
-              ><sub>i</sub>, <em>y</em><sub>i</sub>, <em>z</em><sub>i</sub>).
-              Depth is held fixed at <em>z</em> = 0 for inversion. Picks include
-              Gaussian noise with standard deviation σ and (optionally) one
-              outlier (±<em>k</em>σ, with <em>k</em> ∈ {3, 6}).
-            </p>
+            <h2>Parameters</h2>
             <ul>
               <li>
-                Source–receiver distance:
-                <span class="eq">
-                  <span class="math">
-                    <em>R</em><sub>i</sub> = √[ (<em>x</em><sub>s</sub> −
-                    <em>x</em><sub>i</sub>)² + (<em>y</em><sub>s</sub> −
-                    <em>y</em><sub>i</sub>)² + (0 − <em>z</em><sub>i</sub>)² ].
-                  </span>
-                </span>
+                <span class="hi">N (stations) & geometry:</span> more is good,
+                but <em>wide spread</em> around the source helps most for
+                stability.
               </li>
               <li>
-                Residual at station <em>i</em>:
-                <span class="eq">
-                  <span class="math">
-                    <em>r</em><sub>i</sub> = <em>t</em><sub>i</sub
-                    ><sup>obs</sup> − <em>g</em><sub>i</sub>(<em>m</em>).
-                  </span>
-                </span>
+                <span class="hi">σ (noise):</span> larger σ ⇒ higher expected
+                RMS; use whitening (÷σ) so residuals are in “sigma units”.
               </li>
-              <li class="muted">
-                Units: km (distance), s (time), km·s<sup>−1</sup> (velocity)
+              <li>
+                <span class="hi">k (outlier level):</span> a single bad pick
+                that can skew the fit and the misfit basin; use λ to stabilize.
+              </li>
+              <li>
+                <span class="hi">λ (damping):</span> increases better results
+                for poor geometry/noise; too large ⇒ slower & biased; too small
+                ⇒ unstable.
+              </li>
+              <li>
+                <span class="hi">v<sub>start</sub> vs v<sub>true</sub>:</span>
+                Mismatch shifts the misfit landscape and RMS values.
               </li>
             </ul>
           </div>
-
+          <!-- 2) ARRIVAL-TIME CALCULATION (forward physics) -->
           <div class="card">
-            <h2>Forward model</h2>
-            <div class="eq">
-              <span class="math">
-                <em>g</em><sub>i</sub>(<em>m</em>) = <em>t</em><sub>0</sub> +
-                <em>R</em><sub>i</sub> / <em>v</em>, &nbsp;&nbsp; <em>R</em
-                ><sub>i</sub> = √[ (<em>x</em><sub>s</sub> − <em>x</em
-                ><sub>i</sub>)² + (<em>y</em><sub>s</sub> − <em>y</em
-                ><sub>i</sub>)² + (0 − <em>z</em><sub>i</sub>)² ].
-              </span>
-            </div>
+            <h2>Arrival-time Calculation (forward model)</h2>
             <p>
-              Synthetic observations (Gaussian noise and optional single
-              outlier):
+              In a homogeneous medium, the first-arriving P-wave travels on a
+              straight path at constant speed <em>v</em>. Travel time equals
+              origin time plus distance divided by speed.
             </p>
-            <div class="eq">
-              <span class="math">
-                <em>t</em><sub>i</sub><sup>obs</sup> = <em>t</em><sub>0</sub
-                ><sup>true</sup> + <em>R</em><sub>i</sub>(<em>m</em
-                ><sup>true</sup>) / <em>v</em><sup>true</sup> + ε<sub>i</sub> +
-                δ<sub>i</sub><sup>outlier</sup>, &nbsp;&nbsp; ε<sub>i</sub> ∼
-                𝒩(0, σ²), &nbsp;&nbsp; δ<sub>i</sub><sup>outlier</sup> ∈ {0,
-                ±<em>k</em>σ} for one station.
-              </span>
-            </div>
-          </div>
 
-          <div class="card">
-            <h2>
-              Misfit map (epicentral scan with fixed
-              <span class="hi"><em>v</em><sub>start</sub></span
-              >)
-            </h2>
-            <p>
-              For each grid point (<em>x</em>, <em>y</em>) with depth fixed at
-              0, eliminate the origin time analytically:
-            </p>
-            <div class="eq">
-              <span class="math">
-                <em>t</em><sub>0</sub><sup>*</sup>(<em>x</em>,<em>y</em>) =
-                (1/<em>N</em>) &nbsp;∑<sub>i=1</sub><sup>N</sup> [ <em>t</em
-                ><sub>i</sub><sup>obs</sup> − <em>R</em
-                ><sub>i</sub>(<em>x</em>,<em>y</em>,0)/<em>v</em
-                ><sub>start</sub> ].
-              </span>
-            </div>
-            <p>The displayed scalar field is the mean squared misfit:</p>
-            <div class="eq">
-              <span class="math">
-                <em>J</em>(<em>x</em>,<em>y</em>) = (1/<em>N</em>) &nbsp;∑<sub
-                  >i=1</sub
-                ><sup>N</sup> [ <em>t</em><sub>i</sub><sup>obs</sup> − (
-                <em>t</em><sub>0</sub><sup>*</sup>(<em>x</em>,<em>y</em>) +
-                <em>R</em><sub>i</sub>(<em>x</em>,<em>y</em>,0)/<em>v</em
-                ><sub>start</sub> ) ]².
-              </span>
-            </div>
-            <p class="muted">
-              Brighter basin ⇒ lower misfit under the assumed velocity. If
-              <em>v</em><sub>start</sub> ≠ <em>v</em><sup>true</sup>, the basin
-              may shift or skew.
-            </p>
-          </div>
-
-          <div class="card">
-            <h2>Inverse problem (Gauss–Newton with Tikhonov)</h2>
-            <p>
-              At iteration <em>k</em>, with current estimate <em>m</em
-              ><sup>(k)</sup>, define Δ<em>d</em> = <em>d</em><sup>obs</sup> −
-              <em>g</em>(<em>m</em><sup>(k)</sup>) and the Jacobian <em>G</em> =
-              ∂<em>g</em>/∂<em>m</em> evaluated at <em>m</em><sup>(k)</sup>.
-              Using a constant weight <em>W</em> = σ<sup>−1</sup><em>I</em>, the
-              damped least-squares subproblem is
-            </p>
-            <div class="eq">
-              <span class="math">
-                Φ(Δ<em>m</em>) = ‖ <em>W</em> ( Δ<em>d</em> − <em>G</em> Δ<em
-                  >m</em
+            <!-- R_i -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
                 >
-                ) ‖<sub>2</sub>² + λ² ‖ Δ<em>m</em> ‖<sub>2</sub>².
+                  R<sub>i</sub> = √[ (x<sub>s</sub> − x<sub>i</sub>)² + (y<sub
+                    >s</sub
+                  >
+                  − y<sub>i</sub>)² + (z<sub>s</sub> − z<sub>i</sub>)² ]
+                </span>
               </span>
             </div>
-            <p>The corresponding normal equations (solved directly) are</p>
-            <div class="eq">
-              <span class="math">
-                ( <em>G</em><sup>⊤</sup> <em>W</em><sup>⊤</sup> <em>W</em>
-                <em>G</em> + λ² <em>I</em> ) Δ<em>m</em> = <em>G</em
-                ><sup>⊤</sup> <em>W</em><sup>⊤</sup> <em>W</em> Δ<em>d</em>.
+
+            <!-- g_i(m) -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 6px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  g<sub>i</sub>(m) = t<sub>0</sub> + R<sub>i</sub> / v
+                </span>
               </span>
             </div>
-            <p>
-              With <em>z</em> fixed, the Jacobian row for station <em>i</em> is
-            </p>
-            <div class="eq">
-              <span class="math">
-                ∂<em>t</em><sub>i</sub>/∂<em>x</em><sub>s</sub> = (<em>x</em
-                ><sub>s</sub> − <em>x</em><sub>i</sub>)/(<em>v</em> <em>R</em
-                ><sub>i</sub>), &nbsp; ∂<em>t</em><sub>i</sub>/∂<em>y</em
-                ><sub>s</sub> = (<em>y</em><sub>s</sub> − <em>y</em
-                ><sub>i</sub>)/(<em>v</em> <em>R</em><sub>i</sub>), &nbsp; ∂<em
-                  >t</em
-                ><sub>i</sub>/∂<em>t</em><sub>0</sub> = 1, &nbsp; ∂<em>t</em
-                ><sub>i</sub>/∂<em>v</em> = − <em>R</em><sub>i</sub> /
-                <em>v</em>².
-              </span>
-            </div>
-          </div>
-          <!-- 
-          <div class="card">
-            <h2>Iteration loop &amp; stopping</h2>
-            <p>Initialization (simple and reproducible):</p>
-            <div class="eq">
-              <span class="math">
-                <em>m</em><sup>(0)</sup> = [ mean(<em>x</em><sub>i</sub>),
-                &nbsp; mean(<em>y</em><sub>i</sub>), &nbsp; 0, &nbsp; <em>v</em
-                ><sub>start</sub> ].
-              </span>
-            </div>
-            <p>For <em>k</em> = 0, 1, …:</p>
-            <ol>
-              <li>
-                Predict <em>g</em>(<em>m</em><sup>(k)</sup>) and residuals
-                <em>r</em><sup>(k)</sup> = <em>d</em><sup>obs</sup> −
-                <em>g</em>(<em>m</em><sup>(k)</sup>).
-              </li>
-              <li>
-                Assemble <em>G</em>(<em>m</em><sup>(k)</sup>) and solve the
-                normal equations for Δ<em>m</em><sup>(k)</sup>.
-              </li>
-              <li>
-                Update &nbsp;<em>m</em><sup>(k+1)</sup> = <em>m</em
-                ><sup>(k)</sup> + Δ<em>m</em><sup>(k)</sup>.
-              </li>
-              <li>
-                Record convergence &nbsp;RMS<sup>(k)</sup> = √[ (1/<em>N</em>)
-                ∑<sub>i</sub> (<em>r</em><sub>i</sub><sup>(k)</sup>)² ].
-              </li>
-            </ol>
-            <p>
-              Stop when ‖Δ<em>m</em><sup>(k)</sup>‖<sub>2</sub> &lt; ε (e.g.,
-              10<sup>−4</sup>) or when the iteration count reaches
-              <em>maxIter</em>. More iterations help when the start is far from
-              the solution or the misfit valley is curved; early stopping occurs
-              naturally when the update becomes negligible (already in the
-              quadratic basin or noise-limited).
-            </p>
-          </div> -->
-          <!-- 
-          <div class="card">
-            <h2>Notes</h2>
+
             <ul>
               <li>
-                <span class="hi">Geometry matters:</span>
-                well-spread stations reduce parameter coupling and improve
-                stability of the normal equations.
+                <span class="hi">Model (unknowns):</span> <em>m</em> =
+                [x<sub>s</sub>, y<sub>s</sub>, z<sub>s</sub>, t<sub>0</sub>, v]
+                with units [km, km, km, s, km/s].
               </li>
               <li>
-                <span class="hi">Velocity bias:</span>
-                if <em>v</em><sub>start</sub> differs from <em>v</em
-                ><sup>true</sup>, the misfit basin and the estimate can shift
-                even for small RMS.
+                <span class="hi">Stations (known):</span> (x<sub>i</sub>,
+                y<sub>i</sub>, z<sub>i</sub>), i=1…N.
               </li>
-              <li class="muted">
-                Assumptions: homogeneous velocity, depth fixed (<em>z</em>=0),
-                identical pick variance (σ²), linearized updates via
-                Gauss–Newton, and Tikhonov damping (λ) for stability.
+              <li>
+                These equations generate predictions that we compare to the
+                measured times to find the best-fitting <em>m</em>.
+                <p class="muted">
+                  Units: km (distance), s (time), km·s<sup>−1</sup> (velocity).
+                </p>
               </li>
             </ul>
-          </div> -->
+          </div>
+
+          <!-- 3) SYNTHETIC TIMES WITH NOISE & OUTLIER -->
+          <div class="card">
+            <h2>Synthetic Arrival Times</h2>
+            <p>
+              Observed picks are never perfect. We model random pick error as
+              Gaussian noise and allow one “bad pick” outlier to study more
+              acurate sythetic data.
+            </p>
+
+            <!-- t_obs -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  t<sub>i</sub><sup>obs</sup> = t<sub>0</sub><sup>true</sup> +
+                  R<sub>i</sub>(m<sup>true</sup>)/v<sup>true</sup> + ε<sub
+                    >i</sub
+                  >
+                  + δ<sub>i</sub><sup>outlier</sup>
+                </span>
+              </span>
+            </div>
+
+            <!-- noise & outlier -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 6px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.16rem, 0.98rem + 0.9vw, 1.8rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  ε<sub>i</sub> ∼ 𝒩(0, σ²), &nbsp; δ<sub>i</sub
+                  ><sup>outlier</sup> ∈ {0, ±kσ}
+                </span>
+              </span>
+            </div>
+
+            <ul>
+              <li>
+                <span class="hi">σ (noise ):</span> higher σ ⇒ picks scatter
+                more; expected RMS rises.
+              </li>
+              <li>
+                <span class="hi">k (outlier strength):</span> scales the single
+                bad pick (e.g., 3σ or 6σ) to show its effect on the solution and
+                misfit map.
+              </li>
+            </ul>
+          </div>
+
+          <!-- 4) INVERSE MODELING: RMS, JACOBIAN, WHITENING, TIKHONOV -->
+          <div class="card">
+            <h2>Inverse modeling</h2>
+
+            <p>
+              We seek the model
+              <em>m</em> that best fits the data by minimizing squared
+              residuals. Because travel time depends nonlinearly on
+              <em>m</em> (via distance), we linearize around the current guess,
+              solve a small damped system for an update Δm, and repeat.
+            </p>
+
+            <p><b>Residuals and RMS</b> (what we try to shrink)</p>
+
+            <!-- residual -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  r<sub>i</sub>(m) = t<sub>i</sub><sup>obs</sup> −
+                  g<sub>i</sub>(m)
+                </span>
+              </span>
+            </div>
+
+            <!-- RMS -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 6px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  RMS(m) = √[ (1/N) ∑<sub>i=1</sub><sup>N</sup> r<sub>i</sub>² ]
+                </span>
+              </span>
+            </div>
+
+            <!-- <p class="muted">
+              RMS vs iteration shows convergence: it should fall quickly, then
+              flatten near the noise level.
+            </p> -->
+
+            <p>
+              <b>Linearization (Jacobian)</b> — Sensitivities of time to each
+              parameter at the current guess.
+              <span class="math">m<sup>(k)</sup></span>
+            </p>
+
+            <!-- Jacobian rows -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.18rem, 0.98rem + 0.9vw, 1.85rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  ∂t<sub>i</sub>/∂x<sub>s</sub> = (x<sub>s</sub> −
+                  x<sub>i</sub>)/(v R<sub>i</sub>),&nbsp; ∂t<sub>i</sub>/∂y<sub
+                    >s</sub
+                  >
+                  = (y<sub>s</sub> − y<sub>i</sub>)/(v R<sub>i</sub>),&nbsp;
+                  ∂t<sub>i</sub>/∂z<sub>s</sub> = (z<sub>s</sub> −
+                  z<sub>i</sub>)/(v R<sub>i</sub>),<br />
+                  ∂t<sub>i</sub>/∂t<sub>0</sub> = 1, &nbsp; ∂t<sub>i</sub>/∂v =
+                  − R<sub>i</sub> / v²
+                </span>
+              </span>
+            </div>
+
+            <!-- <p class="muted">
+              Interpretation: moving the source toward a station makes its time
+              earlier; increasing velocity speeds all times (negative ∂t/∂v).
+            </p> -->
+
+            <p>
+              <b>Whitening (by noise)</b> — Scaling residuals and rows by their
+              uncertainty so the math is well-conditioned
+            </p>
+
+            <!-- whitening -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.18rem, 0.98rem + 0.9vw, 1.85rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  G<sub>w</sub> = (1/σ)\,G, &nbsp;&nbsp; d<sub>w</sub> =
+                  (1/σ)\,r
+                </span>
+              </span>
+            </div>
+
+            <!-- <p class="muted">
+              With per-station uncertainties σ<sub>i</sub>, divide row
+              <em>i</em> of <em>G</em> and entry <em>i</em> of <em>r</em> by
+              σ<sub>i</sub>.
+            </p> -->
+
+            <p>
+              <b>Tikhonov-damped equation</b> — stable Gauss–Newton step; then
+              add it to the model
+            </p>
+
+            <!-- normal equations -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  (G<sub>w</sub><sup>⊤</sup> G<sub>w</sub> + λ² I)\,Δm = G<sub
+                    >w</sub
+                  ><sup>⊤</sup> d<sub>w</sub>, &nbsp;&nbsp; m<sup>(k+1)</sup> =
+                  m<sup>(k)</sup> + Δm
+                </span>
+              </span>
+            </div>
+
+            <ul>
+              <li>
+                <span class="hi">λ (damping):</span> bigger λ ⇒ smaller, safer
+                steps (adds bias but stabilizes weak geometry/outliers).
+              </li>
+              <li>
+                <span class="hi">maxIter / stop:</span> stop when ‖Δm‖ is tiny
+                or RMS no longer improves.
+              </li>
+              <li>
+                The damping term λ²I prevents huge updates when stations are
+                poorly placed or data are noisy.
+              </li>
+            </ul>
+          </div>
+
+          <!-- 5) MISFIT MAP (2D scan) -->
+          <div class="card">
+            <h2>Misfit map</h2>
+            <p>
+              For visualization, we scan surface positions (x,y) using a depth
+              <span class="hi">z</span> and fixed
+              <span class="hi">v<sub>start</sub></span
+              >. At each gridpoint, we plot the mean-squared misfit.
+            </p>
+
+            <!-- t0* -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  t<sub>0</sub><sup>*</sup>(x,y; z) = (1/N) ∑<sub>i=1</sub
+                  ><sup>N</sup> [ t<sub>i</sub><sup>obs</sup> −
+                  R<sub>i</sub>(x,y,z)/v<sub>start</sub> ]
+                </span>
+              </span>
+            </div>
+
+            <!-- J(x,y) -->
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 6px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  J(x,y; z) = (1/N) ∑<sub>i=1</sub><sup>N</sup> [ t<sub>i</sub
+                  ><sup>obs</sup> − ( t<sub>0</sub><sup>*</sup>(x,y; z) +
+                  R<sub>i</sub>(x,y,z)/v<sub>start</sub> ) ]²
+                </span>
+              </span>
+            </div>
+
+            <ul>
+              <li>
+                <span class="hi">What it shows:</span> Brighter areas = lower
+                misfit for the chosen <em>z</em> and <em>v<sub>start</sub></em
+                >; the basin hints where the epicenter likely sits.
+              </li>
+              <li>
+                <span class="hi">Parameters:</span> grid resolution (pixels),
+                display depth z (km), assumed v<sub>start</sub> (km/s).
+              </li>
+            </ul>
+          </div>
         </section>
       </div>
 

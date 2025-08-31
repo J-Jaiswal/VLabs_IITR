@@ -203,11 +203,144 @@
         <!-- Main content -->
         <section class="content">
           <!-- <h3>Post-Test Quiz</h3> -->
+          <form id="postQuizForm">
+            <ol>
+              <li>
+                <p>On the misfit heatmap, the best epicenter is usually at:</p>
+                <label
+                  ><input type="radio" name="q1" value="A" required /> A.
+                  warmest/highest colors</label
+                ><br />
+                <label
+                  ><input type="radio" name="q1" value="B" /> B. coolest/lowest
+                  colors</label
+                ><br />
+                <label
+                  ><input type="radio" name="q1" value="C" /> C. the exact
+                  center </label
+                ><br />
+                <label
+                  ><input type="radio" name="q1" value="D" /> D. any
+                  corner</label
+                >
+              </li>
 
-          <p id="postScore" style="font-weight: bold; margin-top: 10px">
-            Yet to be added
-          </p>
-          <!-- 
+              <li>
+                <p>The convergence curve showing RMS per iteration tells us:</p>
+                <label
+                  ><input type="radio" name="q2" value="A" required /> A. how
+                  the fit improves (or not) step by step </label
+                ><br />
+                <label
+                  ><input type="radio" name="q2" value="B" /> B. station battery
+                  levels </label
+                ><br />
+                <label
+                  ><input type="radio" name="q2" value="C" /> C.map zoom</label
+                ><br />
+                <label
+                  ><input type="radio" name="q2" value="D" /> D. number of
+                  files</label
+                >
+              </li>
+
+              <li>
+                <p>Increasing λ (damping) usually makes updates:</p>
+                <label
+                  ><input type="radio" name="q3" value="A" required /> A. larger
+                  and unstable</label
+                ><br />
+                <label
+                  ><input type="radio" name="q3" value="B" /> B. smaller and
+                  more stable</label
+                ><br />
+                <label
+                  ><input type="radio" name="q3" value="C" /> C. random</label
+                ><br />
+                <label
+                  ><input type="radio" name="q3" value="D" /> D.
+                  impossible</label
+                >
+              </li>
+
+              <li>
+                <p>
+                  Which plot best shows progress of the inversion across
+                  iterations?
+                </p>
+                <label
+                  ><input type="radio" name="q4" value="A" required /> A. misfit
+                  heatmap</label
+                ><br />
+                <label
+                  ><input type="radio" name="q4" value="B" /> B. station
+                  table</label
+                ><br />
+                <label
+                  ><input type="radio" name="q4" value="C" /> C.convergence (RMS
+                  vs iteration) plot </label
+                ><br />
+                <label
+                  ><input type="radio" name="q4" value="D" /> D. legend
+                  box</label
+                >
+              </li>
+
+              <li>
+                <p>
+                  A quick way to spot a bad station after running is to check:
+                </p>
+                <label
+                  ><input type="radio" name="q5" value="A" required /> A. which
+                  one has the longest name</label
+                ><br />
+                <label
+                  ><input type="radio" name="q5" value="B" /> B.which one loads
+                  last </label
+                ><br />
+                <label
+                  ><input type="radio" name="q5" value="C" /> C. which one is at
+                  x=0</label
+                ><br />
+                <label
+                  ><input type="radio" name="q5" value="D" /> D.which one shows
+                  a huge residual compared to others
+                </label>
+              </li>
+            </ol>
+
+            <style>
+              .quiz-submit-btn {
+                background-color: #4caf50; /* Green */
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                font-size: 16px;
+                margin-left: 40px;
+                margin-top: 40px;
+                font-weight: bold;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: background-color 0.3s ease, transform 0.2s ease;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+              }
+
+              .quiz-submit-btn:hover {
+                background-color: #45a049;
+                transform: scale(1.03);
+              }
+
+              .quiz-submit-btn:active {
+                transform: scale(0.98);
+                background-color: #3e8e41;
+              }
+            </style>
+
+            <button type="submit" class="quiz-submit-btn">Submit Quiz</button>
+          </form>
+
+          <p id="postScore" style="font-weight: bold; margin-top: 10px"></p>
+
           <script>
             document
               .getElementById("postQuizForm")
@@ -215,11 +348,11 @@
                 e.preventDefault();
 
                 const correctAnswers = {
-                  q1: "A",
-                  q2: "B",
-                  q3: "A",
+                  q1: "B",
+                  q2: "A",
+                  q3: "B",
                   q4: "C",
-                  q5: "C",
+                  q5: "D",
                 };
 
                 let score = 0;
@@ -245,7 +378,7 @@
                   "postScore"
                 ).textContent = `You scored ${score} out of ${total}.`;
               });
-          </script> -->
+          </script>
         </section>
         <!-- /.content -->
       </div>

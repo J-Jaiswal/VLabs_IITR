@@ -212,10 +212,140 @@
         <!-- Main content -->
         <section class="content">
           <!-- <h3>Pre-Test Quiz</h3> -->
+          <form id="quizForm">
+            <ol>
+              <li>
+                <p>The travel time to a station mainly depends on:</p>
+                <label
+                  ><input type="radio" name="q1" value="A" required /> A.station
+                  name</label
+                ><br />
+                <label
+                  ><input type="radio" name="q1" value="B" /> B. map
+                  color</label
+                ><br />
+                <label
+                  ><input type="radio" name="q1" value="C" /> C.Source–Station
+                  distance and wave speed </label
+                ><br />
+                <label
+                  ><input type="radio" name="q1" value="D" /> D. font
+                  size</label
+                >
+              </li>
 
-          <p id="scoreResult" style="font-weight: bold; margin-top: 10px">
-            Yet to be added
-          </p>
+              <li>
+                <p>The origin time (t₀) means:</p>
+                <label
+                  ><input type="radio" name="q2" value="A" required /> A. time
+                  when we press Run.</label
+                ><br />
+                <label
+                  ><input type="radio" name="q2" value="B" /> B. Time the
+                  earthquake actually started .</label
+                ><br />
+                <label
+                  ><input type="radio" name="q2" value="C" /> C. Time at the
+                  farthest station</label
+                ><br />
+                <label
+                  ><input type="radio" name="q2" value="D" /> D. The plotting
+                  time</label
+                >
+              </li>
+
+              <li>
+                <p>A residual at a station is:</p>
+                <label
+                  ><input type="radio" name="q3" value="A" required /> A.
+                  observed − predicted</label
+                ><br />
+                <label
+                  ><input type="radio" name="q3" value="B" /> B. predicted −
+                  observed</label
+                ><br />
+                <label
+                  ><input type="radio" name="q3" value="C" /> C. observed ×
+                  predicted</label
+                ><br />
+                <label
+                  ><input type="radio" name="q3" value="D" /> D. always
+                  zero</label
+                >
+              </li>
+
+              <li>
+                <p>RMS misfit is basically:</p>
+                <label
+                  ><input type="radio" name="q4" value="A" required /> A.
+                  average of residuals (no square)</label
+                ><br />
+                <label
+                  ><input type="radio" name="q4" value="B" /> B. square root of
+                  average of squared residuals</label
+                ><br />
+                <label
+                  ><input type="radio" name="q4" value="C" /> C. biggest
+                  residual only</label
+                ><br />
+                <label
+                  ><input type="radio" name="q4" value="D" /> D. a random
+                  number</label
+                >
+              </li>
+
+              <li>
+                <p>An outlier is a data point that is:</p>
+                <label
+                  ><input type="radio" name="q5" value="A" required /> A.
+                  exactly the mean</label
+                ><br />
+                <label
+                  ><input type="radio" name="q5" value="B" /> B. Far from the
+                  rest (unusual)</label
+                ><br />
+                <label
+                  ><input type="radio" name="q5" value="C" /> C. always
+                  correct</label
+                ><br />
+                <label
+                  ><input type="radio" name="q5" value="D" /> D. always
+                  zero</label
+                >
+              </li>
+            </ol>
+
+            <style>
+              .quiz-submit-btn {
+                background-color: #4caf50; /* Green */
+                color: white;
+                border: none;
+                padding: 12px 24px;
+                font-size: 16px;
+                margin-left: 35px;
+                margin-top: 40px;
+                font-weight: bold;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: background-color 0.3s ease, transform 0.2s ease;
+                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+              }
+
+              .quiz-submit-btn:hover {
+                background-color: #45a049;
+                transform: scale(1.03);
+              }
+
+              .quiz-submit-btn:active {
+                transform: scale(0.98);
+                background-color: #3e8e41;
+              }
+            </style>
+
+            <button type="submit" class="quiz-submit-btn">Submit Quiz</button>
+          </form>
+
+          <p id="scoreResult" style="font-weight: bold; margin-top: 10px"></p>
 
           <script>
             document
@@ -224,11 +354,11 @@
                 e.preventDefault();
 
                 const correctAnswers = {
-                  q1: "B",
-                  q2: "C",
+                  q1: "C",
+                  q2: "B",
                   q3: "A",
-                  q4: "C",
-                  q5: "B",
+                  q4: "B",
+                  q5: "A",
                 };
 
                 let score = 0;

@@ -122,7 +122,7 @@
           </div>
           <div>
             <label class="small-label">Event Z (km)</label>
-            <input id="zInput" type="number" class="form-control" value="0" />
+            <input id="zInput" type="number" class="form-control" value="8" />
           </div>
           <div>
             <label class="small-label"
@@ -215,15 +215,15 @@
       <div class="row g-3">
         <div class="col-lg-6">
           <div class="panel">
-            <h5>Map: Stations, Event, and Uncertainty</h5>
+            <h5>Stations, True Event, and Estimatated Event</h5>
             <div class="map-wrap">
               <svg id="map" width="540" height="420"></svg>
-              <div class="overlay-note">
+              <!-- <div class="overlay-note">
                 Drag stations. Add mode:
                 <button id="toggleAdd" class="btn btn-sm btn-toggle">
                   OFF
                 </button>
-              </div>
+              </div> -->
             </div>
 
             <!-- KPIs (re-enabled so JS can write into them) -->
@@ -234,20 +234,13 @@
                   RMS residual (s): <strong id="kRMS">—</strong>
                 </div>
               </div>
-              <div class="col">
-                <div class="kpi">λ: <strong id="kLambda">—</strong></div>
-              </div>
-            </div>
-
-            <div class="hint mt-2">
-              Alt/Option+click a station to remove it.
             </div>
           </div>
         </div>
 
         <div class="col-lg-6">
           <div class="panel">
-            <h5>Misfit Map (forward scan)</h5>
+            <h5>Misfit Map</h5>
             <svg id="misfit" width="540" height="420"></svg>
             <div class="hint mt-2">
               Misfit computed on a grid with t<sub>0</sub> optimized for each
@@ -258,8 +251,55 @@
 
         <div class="col-lg-12">
           <div class="panel">
-            <!-- <h5>Convergence</h5> -->
-            <svg id="conv" width="1120" height="220"></svg>
+            <h5>Convergence</h5>
+
+            <!-- Wrap the SVG so we can place simple axis labels without touching your D3 code -->
+            <div
+              style="
+                position: relative;
+                width: 1120px;
+                padding-left: 28px;
+                padding-bottom: 22px;
+              "
+            >
+              <svg
+                id="conv"
+                width="1120"
+                height="220"
+                style="display: block"
+              ></svg>
+
+              <!-- Y-axis label -->
+              <div
+                style="
+                  position: absolute;
+                  left: 0;
+                  top: 50%;
+                  transform: translateY(-50%) rotate(-90deg);
+                  transform-origin: left top;
+                  font-size: 12px;
+                  color: #666;
+                  white-space: nowrap;
+                "
+              >
+                Residual / RMS (s)
+              </div>
+
+              <!-- X-axis label -->
+              <div
+                style="
+                  position: absolute;
+                  left: 50%;
+                  bottom: 0;
+                  transform: translateX(-50%);
+                  font-size: 12px;
+                  color: #666;
+                  white-space: nowrap;
+                "
+              >
+                Iterations
+              </div>
+            </div>
           </div>
         </div>
       </div>
