@@ -1,6 +1,6 @@
-/* Earthquake Location — Tikhonov (no SVD), now inverts Z too
+/* Earthquake Location — Tikhonov
  * -----------------------------------------------------------
- * - Inverts [x, y, z, t0, v]  (depth is NOT fixed anymore)
+ * - Inverts [x, y, z, t0, v]
  * - Stations: triangles; True/Estimated event: star
  * - One synthetic outlier (Mild=3σ, Strong=6σ) and highlight EXACTLY that station
  * - Draws map (truth+estimate), misfit heatmap, RMS vs iteration
@@ -15,7 +15,7 @@
   let eventTrue = { x: 10, y: 5, z: 8 };
   let vTrue = 5.0; // km/s (true)
   let vStart = 4.0; // km/s (misfit grid + start)
-  let sigma = 0.1; // s, Gaussian noise std
+  let sigma = 0.1; //  Gaussian noise std
   let lambda = 0.1; // Tikhonov damping
   const maxIter = 8;
   const XY = { min: -60, max: 60 }; // map/misfit extent
@@ -33,6 +33,7 @@
   const mapSel = d3.select("#map");
   const misfitSel = d3.select("#misfit");
   const convSel = d3.select("#conv");
+  const wavesSel = d3.select("#waves");
 
   // -----------------------------
   // UI handles (ids from HTML)
@@ -53,7 +54,6 @@
     btnReset: document.getElementById("btnReset"),
     kIter: document.getElementById("kIter"),
     kRMS: document.getElementById("kRMS"),
-    kCond: document.getElementById("kCond"), // will be "—"
     kLambda: document.getElementById("kLambda"),
   };
 
@@ -73,15 +73,6 @@
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v) * std;
   }
 
-  // Travel time (homogeneous)
-  function travelTime(xr, yr, zr, xs, ys, zs, t0, v) {
-    const dx = xr - xs,
-      dy = yr - ys,
-      dz = zr - zs;
-    const R = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    return t0 + R / v;
-  }
-
   function randomStations(n) {
     return Array.from({ length: n }, () => ({
       x: rand(XY.min, XY.max),
@@ -89,6 +80,15 @@
       z: 0,
       _isOutlier: false,
     }));
+  }
+
+  // Travel time (homogeneous)
+  function travelTime(xr, yr, zr, xs, ys, zs, t0, v) {
+    const dx = xr - xs,
+      dy = yr - ys,
+      dz = zr - zs;
+    const R = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    return t0 + R / v;
   }
 
   function parseOutlierLevel() {
@@ -108,7 +108,6 @@
     );
     tObs = tObs.map((t) => t + gaussian(sigma));
 
-    // clear flags
     stations.forEach((s) => (s._isOutlier = false));
     injectedOutlierIndex = null;
 
@@ -125,7 +124,6 @@
   }
 
   // -----------------------------
-  // Normal-Equations Solver (NO SVD)
   // Solves: (Gwᵀ Gw + λ² I) Δm = Gwᵀ dw
   // -----------------------------
   function solveNormalEq(Gw, dw, lambda) {
@@ -134,20 +132,20 @@
     const P = AtA.length;
     for (let i = 0; i < P; i++) AtA[i][i] += lambda * lambda;
     const Atb = numeric.dot(GT, dw); // (P)
-    const delta_m = numeric.solve(AtA, Atb); // LU solve
+    const delta_m = numeric.solve(AtA, Atb);
     return { delta_m };
   }
 
   // -----------------------------
-  // Inversion for [x, y, z, t0, v]  (NO SVD)
+  // Inversion for [x, y, z, t0, v]
   // -----------------------------
-  function invertXYZT0V(tObs, start, lambda, sigma) {
-    // m = [xs, ys, zs, t0, v]
+  function Inversion(tObs, start, lambda, sigma) {
     let m = [start.x, start.y, start.z, start.t0, start.v];
     const hist = [];
 
     for (let it = 0; it < maxIter; it++) {
       // forward
+
       const tPred = stations.map((s) =>
         travelTime(s.x, s.y, s.z, m[0], m[1], m[2], m[3], m[4])
       );
@@ -155,6 +153,7 @@
       const rms = Math.sqrt(
         numeric.sum(delta.map((d) => d * d)) / delta.length
       );
+
       hist.push(rms);
 
       // Jacobian (N x 5)
@@ -173,15 +172,15 @@
       const Gw = G.map((row) => row.map((e) => e * w));
       const dw = delta.map((d) => d * w);
 
-      // Solve normal equations (Tikhonov)
+      // Solve equations (Tikhonov)
       const { delta_m } = solveNormalEq(Gw, dw, lambda);
 
-      // Update
+      // Updating and close loop
       m = numeric.add(m, delta_m);
       if (numeric.norm2(delta_m) < 1e-4) break;
     }
-    // No SVD → no condition number
-    return { m, hist, cond: "—" };
+
+    return { m, hist };
   }
 
   // -----------------------------
@@ -196,7 +195,6 @@
 
   // -----------------------------
   // Misfit grid (x,y), t0 optimized, v fixed to vStart
-  // Uses current true Z to keep the 2D view (rest unchanged)
   // -----------------------------
   function misfitGrid(tObs, vFixed, N = 60) {
     const xs = d3.scaleLinear().domain([XY.min, XY.max]).ticks(N);
@@ -210,14 +208,13 @@
         const x = xs[i],
           y = ys[j];
 
-        // include current eventTrue.z so depth participates in forward scan
         const R_over_v = stations.map(
           (s) =>
             Math.sqrt(
               (x - s.x) ** 2 + (y - s.y) ** 2 + (eventTrue.z - s.z) ** 2
             ) / vFixed
         );
-        const t0star = d3.mean(tObs.map((t, k) => t - R_over_v[k])); // analytic optimum for t0
+        const t0star = d3.mean(tObs.map((t, k) => t - R_over_v[k]));
         const val = d3.mean(
           tObs.map((t, k) => {
             const r = t - (t0star + R_over_v[k]);
@@ -247,6 +244,119 @@
   const triSmall = d3.symbol().type(d3.symbolTriangle).size(70);
   const star = d3.symbol().type(d3.symbolStar).size(240);
   const starSmall = d3.symbol().type(d3.symbolStar).size(140);
+
+  function drawWaveforms(tObs) {
+    if (!wavesSel.node()) return;
+
+    // --- compute CLEAN arrivals (no noise, no outlier) ---
+    const tClean = stations.map((s) =>
+      travelTime(s.x, s.y, s.z, eventTrue.x, eventTrue.y, eventTrue.z, 0, vTrue)
+    );
+
+    const svg = wavesSel;
+    svg.selectAll("*").remove();
+
+    // ---- layout: fixed width (no horizontal scroll), tall rows (vertical scroll) ----
+    const tmin = d3.min(tClean) - 0.8;
+    const tmax = d3.max(tClean) + 0.8;
+    const pad = { l: 70, r: 30, t: 24, b: 40 };
+    const W = +svg.attr("width") || 1000;
+    const rowHeight = 120; // vertical spacing per station
+    const H = pad.t + pad.b + rowHeight * tClean.length;
+    svg.attr("height", H);
+
+    // ---- scales ----
+    const x = d3
+      .scaleLinear()
+      .domain([tmin, tmax])
+      .range([pad.l, W - pad.r]);
+    const yBand = d3
+      .scaleBand()
+      .domain(d3.range(tClean.length))
+      .range([pad.t, H - pad.b])
+      .paddingInner(0.25);
+
+    // ---- axes ----
+    svg
+      .append("g")
+      .attr("transform", `translate(0,${H - pad.b})`)
+      .call(d3.axisBottom(x).ticks(8).tickSizeOuter(0))
+      .call((g) =>
+        g
+          .append("text")
+          .attr("x", W - pad.r)
+          .attr("y", 32)
+          .attr("fill", "#555")
+          .attr("text-anchor", "end")
+          .text("Time (s)")
+      );
+
+    svg
+      .append("g")
+      .attr("transform", `translate(${pad.l},0)`)
+      .call(
+        d3
+          .axisLeft(yBand)
+          .tickFormat((i) => `Sta ${i + 1}`)
+          .tickSizeOuter(0)
+      );
+
+    // baselines
+    svg
+      .append("g")
+      .selectAll("line.row")
+      .data(d3.range(tClean.length))
+      .join("line")
+      .attr("x1", x(tmin))
+      .attr("x2", x(tmax))
+      .attr("y1", (i) => yBand(i) + yBand.bandwidth() / 2)
+      .attr("y2", (i) => yBand(i) + yBand.bandwidth() / 2)
+      .attr("stroke", "#e5e7eb");
+
+    // ---- zig-zag (height ≈ 2× width) at each clean arrival ----
+    const halfWidthSec = 0.15; // time half-width of zigzag
+    const tailSec = 0.5; // baseline before/after
+    const aspect = 2.0; // height = aspect × width
+
+    const line = d3
+      .line()
+      .curve(d3.curveLinear)
+      .x((d) => x(d.t))
+      .y((d) => d.y);
+
+    tClean.forEach((t0, i) => {
+      const cy = yBand(i) + yBand.bandwidth() / 2;
+      const zigWidthPx = x(t0 + halfWidthSec) - x(t0 - halfWidthSec);
+      let A = (aspect * zigWidthPx) / 2;
+      A = Math.min(A, rowHeight * 0.42);
+
+      const pts = [
+        { t: tmin, y: cy },
+        { t: t0 - tailSec, y: cy },
+        { t: t0 - halfWidthSec, y: cy - A }, // +peak
+        { t: t0, y: cy }, // baseline at arrival
+        { t: t0 + halfWidthSec, y: cy + A }, // -peak
+        { t: t0 + tailSec, y: cy },
+        { t: tmax, y: cy },
+      ];
+
+      svg
+        .append("path")
+        .attr("d", line(pts))
+        .attr("fill", "none")
+        .attr("stroke", "#374151")
+        .attr("stroke-width", 2);
+
+      svg
+        .append("line")
+        .attr("x1", x(t0))
+        .attr("x2", x(t0))
+        .attr("y1", cy - A - 4)
+        .attr("y2", cy + A + 4)
+        .attr("stroke", "#9ca3af")
+        .attr("stroke-width", 1);
+    });
+  }
 
   function drawMap(est) {
     const svg = mapSel;
@@ -323,33 +433,74 @@
   function drawMisfit(tObs) {
     const svg = misfitSel;
     svg.selectAll("*").remove();
-    const { w, h } = getWH(svg),
-      pad = 28;
+    const { w, h } = getWH(svg);
+
+    // ────────────────────────────────────────────────────────────
+    // 1) Layout: reserve a dedicated bottom band for the colorbar
+    //    so it never collides with the x-axis.
+    //    plotBottomY = y of the x-axis (top of colorbar band)
+    // ────────────────────────────────────────────────────────────
+    const pad = {
+      l: 36,
+      r: 36,
+      t: 18,
+      bAxis: 34,
+      cbBarH: 12,
+      cbGap: 42,
+      cbAxisGap: 8,
+    };
+    const plotBottomY =
+      h - (pad.bAxis + pad.cbGap + pad.cbBarH + pad.cbAxisGap);
+
+    // ────────────────────────────────────────────────────────────
+    // 2) Plot scales for map coordinates (x,y in km)
+    // ────────────────────────────────────────────────────────────
     const x = d3
       .scaleLinear()
       .domain([XY.min, XY.max])
-      .range([pad, w - pad]);
+      .range([pad.l, w - pad.r]);
     const y = d3
       .scaleLinear()
       .domain([XY.min, XY.max])
-      .range([h - pad, pad]);
+      .range([plotBottomY, pad.t]);
 
+    // ────────────────────────────────────────────────────────────
+    // 3) Axes (x-axis sits above the colorbar band)
+    // ────────────────────────────────────────────────────────────
     svg
       .append("g")
-      .attr("transform", `translate(0,${h - pad})`)
-      .call(d3.axisBottom(x).ticks(7));
+      .attr("transform", `translate(0,${plotBottomY})`)
+      .call(d3.axisBottom(x).ticks(7).tickSizeOuter(0));
     svg
       .append("g")
-      .attr("transform", `translate(${pad},0)`)
-      .call(d3.axisLeft(y).ticks(7));
+      .attr("transform", `translate(${pad.l},0)`)
+      .call(d3.axisLeft(y).ticks(7).tickSizeOuter(0));
 
-    const { xs, ys, Z, zmin, zmax } = misfitGrid(tObs, vStart, 60);
+    // ────────────────────────────────────────────────────────────
+    // 4) Misfit grid: returns MSE (mean-squared error) in s²
+    //    Convert MSE → RMS (seconds) for clearer interpretation.
+    // ────────────────────────────────────────────────────────────
+    const { xs, ys, Z, zmin, zmax } = misfitGrid(tObs, vStart, 60); // Z = MSE (s²)
+    const Zr = Z.map((row) => row.map((v) => Math.sqrt(Math.max(0, v)))); // Zr = RMS (s)
+    let rmin = d3.min(Zr.flat());
+    let rmax = d3.max(Zr.flat());
+
+    // (Optional, uncomment to stabilize legend range for teaching)
+    // rmin = 0;
+    // rmax = Math.max(3 * sigma, rmax);
+
+    // ────────────────────────────────────────────────────────────
+    // 5) Color scale on RMS (seconds). Low=good → brighter.
+    // ────────────────────────────────────────────────────────────
     const color = d3
       .scaleSequential(d3.interpolateViridis)
-      .domain([zmax, zmin]);
+      .domain([rmax, rmin]);
+
+    // ────────────────────────────────────────────────────────────
+    // 6) Heatmap cells (each cell = one (x,y) with RMS misfit)
+    // ────────────────────────────────────────────────────────────
     const cellW = x(xs[1]) - x(xs[0]) || 6;
     const cellH = y(ys[ys.length - 2]) - y(ys[ys.length - 1]) || 6;
-
     const gHeat = svg.append("g");
     for (let j = 0; j < ys.length; j++) {
       for (let i = 0; i < xs.length; i++) {
@@ -359,11 +510,100 @@
           .attr("y", y(ys[j]) - cellH / 2)
           .attr("width", cellW)
           .attr("height", cellH)
-          .attr("fill", color(Z[j][i]));
+          .attr("fill", color(Zr[j][i])); // <- color by RMS (seconds)
       }
     }
 
-    // stations (triangles) overlaid
+    // ────────────────────────────────────────────────────────────
+    // 7) Horizontal colorbar (RMS seconds) in the bottom band
+    // ────────────────────────────────────────────────────────────
+    const barX0 = pad.l,
+      barX1 = w - pad.r;
+    const barY = plotBottomY + pad.cbGap;
+    const gradientId = "misfit-colorbar-rms";
+
+    const defs = svg.append("defs");
+    const grad = defs
+      .append("linearGradient")
+      .attr("id", gradientId)
+      .attr("x1", "0%")
+      .attr("y1", "0%")
+      .attr("x2", "100%")
+      .attr("y2", "0%");
+
+    // Gradient defined directly in RMS space
+    const nStops = 32;
+    d3.range(nStops).forEach((i) => {
+      const t = i / (nStops - 1);
+      const r = rmin + t * (rmax - rmin);
+      grad
+        .append("stop")
+        .attr("offset", `${t * 100}%`)
+        .attr("stop-color", color(r));
+    });
+
+    // Bar rectangle
+    svg
+      .append("rect")
+      .attr("x", barX0)
+      .attr("y", barY)
+      .attr("width", barX1 - barX0)
+      .attr("height", pad.cbBarH)
+      .style("fill", `url(#${gradientId})`);
+
+    // Colorbar axis with INTEGER RMS ticks (uniform spacing)
+    const scaleBarX = d3
+      .scaleLinear()
+      .domain([rmin, rmax])
+      .range([barX0, barX1]);
+    const start = Math.ceil(rmin),
+      end = Math.floor(rmax);
+    const step = Math.max(1, Math.ceil((rmax - rmin) / 6));
+    let rmsInts = d3.range(start, end + 1, step);
+    if (rmsInts.length === 0) rmsInts = [Math.round(rmin), Math.round(rmax)]; // fallback
+
+    const axisBar = d3
+      .axisBottom(scaleBarX)
+      .tickValues(rmsInts)
+      .tickFormat((d) => d); // show integers (seconds)
+
+    const axisY = barY + pad.cbBarH + pad.cbAxisGap;
+    svg
+      .append("g")
+      .attr("class", "colorbar-axis")
+      .attr("transform", `translate(0, ${axisY})`)
+      .call(axisBar);
+
+    // End labels ABOVE the bar to avoid overlapping numbers
+    const lblY = barY - 6;
+    svg
+      .append("text")
+      .attr("x", barX0)
+      .attr("y", lblY)
+      .attr("text-anchor", "start")
+      .attr("font-size", 11)
+      .attr("fill", "#444")
+      .text("Good misfit (low)");
+    svg
+      .append("text")
+      .attr("x", barX1)
+      .attr("y", lblY)
+      .attr("text-anchor", "end")
+      .attr("font-size", 11)
+      .attr("fill", "#444")
+      .text("Bad misfit (high)");
+    svg
+      .append("text")
+      .attr("x", barX1)
+      .attr("y", axisY + 16)
+      .attr("text-anchor", "end")
+      .attr("font-size", 11)
+      .attr("fill", "#666")
+      .text("RMS (seconds)");
+
+    // ────────────────────────────────────────────────────────────
+    // 8) Overlays: stations, outlier ring, and true event
+    // ────────────────────────────────────────────────────────────
     svg
       .append("g")
       .selectAll("path.station")
@@ -377,7 +617,6 @@
       .attr("transform", (d) => `translate(${x(d.x)},${y(d.y)})`)
       .attr("fill", (d) => (highlightIdx.has(d.i) ? C.outlier : C.station));
 
-    // ring(s)
     const gRing = svg.append("g").attr("pointer-events", "none");
     highlightIdx.forEach((i) => {
       const s = stations[i];
@@ -391,7 +630,6 @@
         .attr("stroke-width", 2.5);
     });
 
-    // truth (star)
     svg
       .append("path")
       .attr("d", starSmall())
@@ -495,7 +733,7 @@
     };
 
     // invert (no SVD)
-    const { m, hist, cond } = invertXYZT0V(tObs, start, lambda, sigma);
+    const { m, hist } = Inversion(tObs, start, lambda, sigma);
 
     // highlight EXACTLY the injected station (if any)
     setSingleHighlight(k);
@@ -504,6 +742,7 @@
     drawMap(m);
     drawMisfit(tObs);
     drawConvergence(hist);
+    drawWaveforms(tObs);
 
     // KPIs
     el.kIter.textContent = String(hist.length);
@@ -554,6 +793,9 @@
     el.kRMS.textContent = "—";
     el.kCond.textContent = "—";
     el.kLambda.textContent = "—";
+
+    // reset waveforms
+    wavesSel.selectAll("*").remove();
   }
 
   el.btnGenerate.addEventListener("click", generate);
