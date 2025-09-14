@@ -85,6 +85,27 @@
       .colorbar-axis text {
         font-size: 11px;
       }
+
+      /* ——— Compact edit-mode bar ——— */
+      .modebar .btn {
+        border-radius: 999px;
+        padding: 6px 12px;
+        border-color: #e5e7eb;
+      }
+      .modebar .btn:hover {
+        background: #f3f4f6;
+      }
+      /* in your current <style> block */
+      .modebar .btn.active {
+        background: #e8edff;
+        border-color: #c7d2fe;
+        color: #0b1220;
+        box-shadow: none;
+      }
+
+      .modebar small {
+        font-size: 12px;
+      }
     </style>
   </head>
   <body>
@@ -217,6 +238,31 @@
           <div class="panel">
             <h5>Stations, True Event, and Estimatated Event</h5>
             <div class="map-wrap">
+              <div class="modebar d-flex align-items-center gap-2 mt-2">
+                <div
+                  class="btn-group btn-group-sm"
+                  role="group"
+                  aria-label="Edit mode"
+                >
+                  <button
+                    id="modeAdd"
+                    type="button"
+                    class="btn btn-light active"
+                  >
+                    Add
+                  </button>
+                  <button id="modeMove" type="button" class="btn btn-light">
+                    Move
+                  </button>
+                  <button id="modeRemove" type="button" class="btn btn-light">
+                    Remove
+                  </button>
+                </div>
+                <small class="text-muted ms-2"
+                  >Add: click • Move: drag • Remove: click</small
+                >
+              </div>
+
               <svg id="map" width="540" height="420"></svg>
               <!-- <div class="overlay-note">
                 Drag stations. Add mode:
@@ -234,6 +280,16 @@
                   RMS residual (s): <strong id="kRMS">—</strong>
                 </div>
               </div>
+              <!-- <div class="row mt-1 gx-3">
+                <div class="col">
+                  <div class="kpi">
+                    True (km): <strong id="trueXYZ">x=, y=, z=</strong>
+                  </div>
+                  <div class="kpi">
+                    Estimated (km): <strong id="estXYZ">x=, y=, z=</strong>
+                  </div>
+                </div>
+              </div> -->
             </div>
           </div>
         </div>

@@ -21,6 +21,9 @@
   const XY = { min: -60, max: 60 }; // map/misfit extent
   let injectedOutlierIndex = null; // which station got the ±kσ hit
   let highlightIdx = new Set(); // indices to highlight (amber)
+  // ── Map edit mode ─────────────────────────────────────────────
+  let toolMode = "add";
+  const modeCursor = { add: "copy", move: "grab", remove: "not-allowed" };
 
   const C = {
     station: "#111111",
@@ -55,6 +58,11 @@
     kIter: document.getElementById("kIter"),
     kRMS: document.getElementById("kRMS"),
     kLambda: document.getElementById("kLambda"),
+    modeAdd: document.getElementById("modeAdd"),
+    modeMove: document.getElementById("modeMove"),
+    modeRemove: document.getElementById("modeRemove"),
+    trueXYZ: document.getElementById("trueXYZ"),
+    estXYZ: document.getElementById("estXYZ"),
   };
 
   el.vTrue?.addEventListener("input", () => {
@@ -65,6 +73,57 @@
   // Utilities
   // -----------------------------
   const rand = (a, b) => a + Math.random() * (b - a);
+
+  function clamp(v, a, b) {
+    return Math.max(a, Math.min(b, v));
+  }
+
+  function setMode(m) {
+    toolMode = m;
+    // button styles
+    [el.modeAdd, el.modeMove, el.modeRemove].forEach((btn) =>
+      btn?.classList.remove("active")
+    );
+    if (m === "add") el.modeAdd?.classList.add("active");
+    if (m === "move") el.modeMove?.classList.add("active");
+    if (m === "remove") el.modeRemove?.classList.add("active");
+    // refresh map to rebind handlers & cursor
+    drawMap(null);
+  }
+
+  function addStationAt(xkm, ykm) {
+    stations.push({ x: xkm, y: ykm, z: 0, _isOutlier: false });
+    if (el.numStations) el.numStations.value = stations.length;
+    drawMap(null); // visual feedback now; press Run to recompute
+  }
+
+  function removeStationAtIndex(i) {
+    if (i < 0 || i >= stations.length) return;
+    stations.splice(i, 1);
+    if (el.numStations) el.numStations.value = stations.length;
+    drawMap(null);
+  }
+
+  // --- 2x2 symmetric eigen-decomp (for ellipse) ---
+  function eig2x2(a, b, c) {
+    // matrix [[a,b],[b,c]]
+    const tr = a + c;
+    const det = a * c - b * b;
+    const disc = Math.max(0, tr * tr - 4 * det);
+    const l1 = 0.5 * (tr + Math.sqrt(disc));
+    const l2 = 0.5 * (tr - Math.sqrt(disc));
+    // eigenvector for l1
+    let vx = b,
+      vy = l1 - a;
+    if (Math.abs(vx) + Math.abs(vy) < 1e-12) {
+      vx = 1;
+      vy = 0;
+    }
+    const n = Math.hypot(vx, vy) || 1;
+    const ux = vx / n,
+      uy = vy / n; // unit vector (major axis)
+    return { l1, l2, ux, uy };
+  }
 
   function gaussian(std) {
     if (std <= 0) return 0;
@@ -363,6 +422,7 @@
     svg.selectAll("*").remove();
     const { w, h } = getWH(svg),
       pad = 28;
+
     const x = d3
       .scaleLinear()
       .domain([XY.min, XY.max])
@@ -372,6 +432,7 @@
       .domain([XY.min, XY.max])
       .range([h - pad, pad]);
 
+    // Axes
     svg
       .append("g")
       .attr("transform", `translate(0,${h - pad})`)
@@ -381,9 +442,12 @@
       .attr("transform", `translate(${pad},0)`)
       .call(d3.axisLeft(y).ticks(7));
 
-    // stations (triangles)
-    svg
-      .append("g")
+    // Cursor by mode
+    svg.style("cursor", modeCursor[toolMode] || "default");
+
+    // ── Stations (triangles) ─────────────────────────────────────
+    const gStations = svg.append("g");
+    const sel = gStations
       .selectAll("path.station")
       .data(
         stations.map((s, i) => ({ ...s, i })),
@@ -395,7 +459,45 @@
       .attr("transform", (d) => `translate(${x(d.x)},${y(d.y)})`)
       .attr("fill", (d) => (highlightIdx.has(d.i) ? C.outlier : C.station));
 
-    // outlier ring(s) on top
+    // Remove mode: click a station to delete it
+    if (toolMode === "remove") {
+      sel.on("click", (ev, d) => {
+        ev.stopPropagation(); // don't bubble to map bg
+        removeStationAtIndex(d.i);
+      });
+    } else {
+      sel.on("click", null);
+    }
+
+    // Move mode: drag behavior (no redraw during drag; update transform live)
+    const drag = d3
+      .drag()
+      .on("start", function () {
+        d3.select(this).attr("opacity", 0.8);
+        svg.style("cursor", "grabbing");
+      })
+      .on("drag", function (ev, d) {
+        const xkm = clamp(x.invert(ev.x), XY.min, XY.max);
+        const ykm = clamp(y.invert(ev.y), XY.min, XY.max);
+        // update data
+        stations[d.i].x = xkm;
+        stations[d.i].y = ykm;
+        // update this symbol position
+        d3.select(this).attr("transform", `translate(${x(xkm)},${y(ykm)})`);
+      })
+      .on("end", function () {
+        d3.select(this).attr("opacity", 1);
+        svg.style("cursor", modeCursor[toolMode] || "default");
+        // keep map as-is; user presses Run to recompute inversion/misfit
+      });
+
+    if (toolMode === "move") {
+      sel.call(drag);
+    } else {
+      sel.on(".drag", null); // remove drag handlers if switching modes
+    }
+
+    // Outlier ring(s) on top
     const gRing = svg.append("g").attr("pointer-events", "none");
     highlightIdx.forEach((i) => {
       const s = stations[i];
@@ -409,7 +511,7 @@
         .attr("stroke-width", 3);
     });
 
-    // truth (star)
+    // Truth (star)
     svg
       .append("path")
       .attr("d", star())
@@ -418,7 +520,7 @@
       .attr("stroke", "white")
       .attr("stroke-width", 1.2);
 
-    // estimate (star)
+    // Estimate (star)
     if (est) {
       svg
         .append("path")
@@ -428,6 +530,17 @@
         .attr("stroke", "white")
         .attr("stroke-width", 1.2);
     }
+
+    // Background click for Add mode (only inside plot area)
+    svg.on("click", (event) => {
+      if (toolMode !== "add") return;
+      if (event.target.closest("#map") !== svg.node()) return;
+      const [mx, my] = d3.pointer(event, svg.node());
+      if (mx < pad || mx > w - pad || my < pad || my > h - pad) return;
+      const xkm = x.invert(mx);
+      const ykm = y.invert(my);
+      addStationAt(xkm, ykm);
+    });
   }
 
   function drawMisfit(tObs) {
@@ -747,8 +860,16 @@
     // KPIs
     el.kIter.textContent = String(hist.length);
     el.kRMS.textContent = (hist.at(-1) ?? NaN).toFixed(3);
-    el.kCond.textContent = "—"; // no SVD cond
     el.kLambda.textContent = lambda.toFixed(2);
+    // if (el.kCond) el.kCond.textContent = "—";
+
+    const fx = (n) => Number(n).toFixed(2);
+    if (el.trueXYZ)
+      el.trueXYZ.textContent = `x=${fx(eventTrue.x)}, y=${fx(
+        eventTrue.y
+      )}, z=${fx(eventTrue.z)}`;
+    if (el.estXYZ)
+      el.estXYZ.textContent = `x=${fx(m[0])}, y=${fx(m[1])}, z=${fx(m[2])}`;
 
     console.log({
       stations,
@@ -791,7 +912,8 @@
     convSel.selectAll("*").remove();
     el.kIter.textContent = "—";
     el.kRMS.textContent = "—";
-    el.kCond.textContent = "—";
+    // if (el.kCond) el.kCond.textContent = "—";
+
     el.kLambda.textContent = "—";
 
     // reset waveforms
@@ -801,6 +923,9 @@
   el.btnGenerate.addEventListener("click", generate);
   el.btnRun.addEventListener("click", run);
   el.btnReset.addEventListener("click", reset);
+  el.modeAdd?.addEventListener("click", () => setMode("add"));
+  el.modeMove?.addEventListener("click", () => setMode("move"));
+  el.modeRemove?.addEventListener("click", () => setMode("remove"));
 
   // Init
   reset();
