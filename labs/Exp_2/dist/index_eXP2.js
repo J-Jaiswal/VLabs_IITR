@@ -15,12 +15,14 @@
   let eventTrue = { x: 10, y: 5, z: 8 };
   let vTrue = 5.0; // km/s (true)
   let vStart = 4.0; // km/s (misfit grid + start)
-  let sigma = 0.1; //  Gaussian noise std
+  let sigma = 1.5; //  Gaussian noise std
   let lambda = 0.1; // Tikhonov damping
   const maxIter = 8;
   const XY = { min: -60, max: 60 }; // map/misfit extent
   let injectedOutlierIndex = null; // which station got the ±kσ hit
   let highlightIdx = new Set(); // indices to highlight (amber)
+  let ellipseParams = null; // { cx, cy, rx, ry, thetaDeg }
+
   // ── Map edit mode ─────────────────────────────────────────────
   let toolMode = "add";
   const modeCursor = { add: "copy", move: "grab", remove: "not-allowed" };
@@ -103,12 +105,12 @@
     if (el.numStations) el.numStations.value = stations.length;
     drawMap(null);
   }
-
-  // --- 2x2 symmetric eigen-decomp (for ellipse) ---
+  // --- 2x2 symmetric eigen-decomp (for ellipse principal axes) ---
+  // Input = covariance matrix [ [a, b], [b, c] ]
+  // --- 2x2 symmetric eigen-decomp (covariance -> axes) ---
   function eig2x2(a, b, c) {
-    // matrix [[a,b],[b,c]]
-    const tr = a + c;
-    const det = a * c - b * b;
+    const tr = a + c,
+      det = a * c - b * b;
     const disc = Math.max(0, tr * tr - 4 * det);
     const l1 = 0.5 * (tr + Math.sqrt(disc));
     const l2 = 0.5 * (tr - Math.sqrt(disc));
@@ -120,9 +122,57 @@
       vy = 0;
     }
     const n = Math.hypot(vx, vy) || 1;
-    const ux = vx / n,
-      uy = vy / n; // unit vector (major axis)
-    return { l1, l2, ux, uy };
+    return { l1, l2, ux: vx / n, uy: vy / n }; // major axis unit vector = (ux,uy)
+  }
+
+  // ---------- 1-σ ellipse from low-RMS grid cells ----------
+  function ellipseFromMisfit(xs, ys, Zr, frac = 0.2) {
+    // Flatten (x,y,rms)
+    const pts = [];
+    for (let j = 0; j < ys.length; j++) {
+      for (let i = 0; i < xs.length; i++) {
+        pts.push({ x: xs[i], y: ys[j], r: Zr[j][i] });
+      }
+    }
+    if (pts.length < 3) return null;
+
+    // Keep best `frac` by RMS (lower = better)
+    const rs = pts.map((p) => p.r).sort((a, b) => a - b);
+    const cut =
+      rs[
+        Math.floor(Math.max(0, Math.min(rs.length - 1, frac * (rs.length - 1))))
+      ];
+    const sel = pts.filter((p) => p.r <= cut);
+    if (sel.length < 3) return null;
+
+    // Mean
+    const mx = d3.mean(sel, (p) => p.x);
+    const my = d3.mean(sel, (p) => p.y);
+
+    // Unweighted covariance
+    let sxx = 0,
+      syy = 0,
+      sxy = 0;
+    for (const p of sel) {
+      const dx = p.x - mx,
+        dy = p.y - my;
+      sxx += dx * dx;
+      sxy += dx * dy;
+      syy += dy * dy;
+    }
+    const n = sel.length;
+    sxx /= n - 1;
+    syy /= n - 1;
+    sxy /= n - 1;
+
+    // Eigen → 1-σ radii and orientation
+    const { l1, l2, ux, uy } = eig2x2(sxx, sxy, syy);
+    const rx = Math.sqrt(Math.max(0, l1)); // 1σ along major
+    const ry = Math.sqrt(Math.max(0, l2)); // 1σ along minor
+    const thetaDeg = (Math.atan2(uy, ux) * 180) / Math.PI;
+
+    if (!isFinite(rx) || !isFinite(ry) || rx <= 0 || ry <= 0) return null;
+    return { cx: mx, cy: my, rx, ry, thetaDeg };
   }
 
   function gaussian(std) {
@@ -198,13 +248,19 @@
   // -----------------------------
   // Inversion for [x, y, z, t0, v]
   // -----------------------------
+  // -----------------------------
+  // Inversion for [x, y, z, t0, v]  -> returns { m, hist, ellipse }
+  // -----------------------------
   function Inversion(tObs, start, lambda, sigma) {
     let m = [start.x, start.y, start.z, start.t0, start.v];
     const hist = [];
 
+    // protect against sigma = 0 in whitening
+    const sig = Math.max(1e-9, +sigma);
+
+    let G_last = null; // keep the last Jacobian (unwhitened)
     for (let it = 0; it < maxIter; it++) {
       // forward
-
       const tPred = stations.map((s) =>
         travelTime(s.x, s.y, s.z, m[0], m[1], m[2], m[3], m[4])
       );
@@ -212,7 +268,6 @@
       const rms = Math.sqrt(
         numeric.sum(delta.map((d) => d * d)) / delta.length
       );
-
       hist.push(rms);
 
       // Jacobian (N x 5)
@@ -222,24 +277,72 @@
           dz = m[2] - s.z;
         const R = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-12;
         const v = m[4];
-        // [∂t/∂xs, ∂t/∂ys, ∂t/∂zs, ∂t/∂t0, ∂t/∂v]
+        // [∂t/∂x, ∂t/∂y, ∂t/∂z, ∂t/∂t0, ∂t/∂v]
         return [dx / (v * R), dy / (v * R), dz / (v * R), 1.0, -R / (v * v)];
       });
 
-      // simple whitening with σ (scalar)
-      const w = sigma > 0 ? 1 / sigma : 1;
+      // keep the last unwhitened Jacobian for covariance later
+      G_last = G;
+
+      // whitening (scalar σ): Gw = G / σ ; dw = Δt / σ
+      const w = 1 / sig;
       const Gw = G.map((row) => row.map((e) => e * w));
       const dw = delta.map((d) => d * w);
 
-      // Solve equations (Tikhonov)
+      // Solve (Gwᵀ Gw + λ² I) Δm = Gwᵀ dw
       const { delta_m } = solveNormalEq(Gw, dw, lambda);
 
-      // Updating and close loop
+      // update
       m = numeric.add(m, delta_m);
       if (numeric.norm2(delta_m) < 1e-4) break;
     }
 
-    return { m, hist };
+    // ----- Posterior covariance at final estimate -----
+    // Using the whitened system: Cov(m) ≈ (Gwᵀ Gw + λ² I)^(-1) * σ²
+    // (more numerically stable than building from unwhitened G)
+    // Recompute Gw at m (or reuse last Gw by recalculating once here)
+    const G = stations.map((s) => {
+      const dx = m[0] - s.x,
+        dy = m[1] - s.y,
+        dz = m[2] - s.z;
+      const R = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-12;
+      const v = m[4];
+      return [dx / (v * R), dy / (v * R), dz / (v * R), 1.0, -R / (v * v)];
+    });
+    const Gw = G.map((row) => row.map((e) => e / sig));
+    const GTw = numeric.transpose(Gw);
+    let H = numeric.dot(GTw, Gw); // (5x5)
+    // add Tikhonov λ² I
+    for (let i = 0; i < H.length; i++) H[i][i] += lambda * lambda;
+
+    // invert (posterior metric in whitened space), then scale by σ²
+    let Cov = null;
+    try {
+      Cov = numeric.inv(H);
+    } catch (e) {
+      Cov = null;
+    }
+
+    // Build 1-σ ellipse from the [x,y] block
+    let ellipse = null;
+    if (Cov) {
+      // scale to actual units: Cov_true ≈ Cov * σ²
+      const s2 = sig * sig;
+      const Cxx = Cov[0][0] * s2;
+      const Cxy = Cov[0][1] * s2;
+      const Cyy = Cov[1][1] * s2;
+
+      const { l1, l2, ux, uy } = eig2x2(Cxx, Cxy, Cyy);
+      const rx = Math.sqrt(Math.max(0, l1)); // 1-σ along major
+      const ry = Math.sqrt(Math.max(0, l2)); // 1-σ along minor
+      const thetaDeg = Math.atan2(uy, ux) * (180 / Math.PI);
+
+      if (isFinite(rx) && isFinite(ry) && rx > 0 && ry > 0) {
+        ellipse = { cx: m[0], cy: m[1], rx, ry, thetaDeg };
+      }
+    }
+
+    return { m, hist, ellipse };
   }
 
   // -----------------------------
@@ -497,6 +600,23 @@
       sel.on(".drag", null); // remove drag handlers if switching modes
     }
 
+    if (ellipseParams) {
+      const { cx, cy, rx, ry, thetaDeg } = ellipseParams;
+      const rxPx = Math.abs(x(cx + rx) - x(cx)); // 1σ in pixels
+      const ryPx = Math.abs(y(cy + ry) - y(cy));
+      svg
+        .append("g")
+        .attr("transform", `translate(${x(cx)},${y(cy)}) rotate(${thetaDeg})`)
+        .append("ellipse")
+        .attr("cx", 0)
+        .attr("cy", 0)
+        .attr("rx", rxPx)
+        .attr("ry", ryPx)
+        .attr("fill", "#f59e0b22")
+        .attr("stroke", "#f59e0b")
+        .attr("stroke-width", 2);
+    }
+
     // Outlier ring(s) on top
     const gRing = svg.append("g").attr("pointer-events", "none");
     highlightIdx.forEach((i) => {
@@ -598,9 +718,8 @@
     let rmin = d3.min(Zr.flat());
     let rmax = d3.max(Zr.flat());
 
-    // (Optional, uncomment to stabilize legend range for teaching)
-    // rmin = 0;
-    // rmax = Math.max(3 * sigma, rmax);
+    // Zr = RMS (seconds) already computed above
+    // ellipseParams = ellipseFromMisfit(xs, ys, Zr, 0.2); // keep 0.20, or try 0.10 for tighter
 
     // ────────────────────────────────────────────────────────────
     // 5) Color scale on RMS (seconds). Low=good → brighter.
@@ -846,7 +965,11 @@
     };
 
     // invert (no SVD)
-    const { m, hist } = Inversion(tObs, start, lambda, sigma);
+    // invert (no SVD)
+    const { m, hist, ellipse } = Inversion(tObs, start, lambda, sigma);
+
+    // use the Jacobian-based 1-σ ellipse from the solver
+    ellipseParams = ellipse || null;
 
     // highlight EXACTLY the injected station (if any)
     setSingleHighlight(k);
@@ -899,7 +1022,7 @@
       el.vTrueLbl.textContent = "5.0";
     }
     if (el.vStart) el.vStart.value = 4.0;
-    if (el.sigma) el.sigma.value = 0.1;
+    if (el.sigma) el.sigma.value = 1.5;
     if (el.lambda) el.lambda.value = 0.1;
     if (el.numStations) el.numStations.value = 6;
     if (el.outlier)
@@ -914,7 +1037,7 @@
     el.kRMS.textContent = "—";
     // if (el.kCond) el.kCond.textContent = "—";
 
-    el.kLambda.textContent = "—";
+    // el.kLambda.textContent = "—";
 
     // reset waveforms
     wavesSel.selectAll("*").remove();
