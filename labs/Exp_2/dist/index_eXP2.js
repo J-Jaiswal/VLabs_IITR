@@ -1,13 +1,50 @@
-/* Earthquake Location — Tikhonov
- * -----------------------------------------------------------
+/* Earthquake Location — Tikhonov (with detailed console logging)
+ * --------------------------------------------------------------
  * - Inverts [x, y, z, t0, v]
  * - Stations: triangles; True/Estimated event: star
  * - One synthetic outlier (Mild=3σ, Strong=6σ) and highlight EXACTLY that station
- * - Draws map (truth+estimate), misfit heatmap, RMS vs iteration
- * Deps: D3 v7, numeric.js
+ * - Draws map (truth+estimate), misfit heatmap, RMS vs iteration, simple waveforms
+ * - Deps: D3 v7, numeric.js
+ *
+ * Debug controls:
+ *   DBG.verbose              → high level step-by-step logging (true/false)
+ *   DBG.logMatrices          → log Jacobians / normal matrices each iteration
+ *   DBG.logEveryGridCell     → log misfit per grid cell (⚠️ very heavy)
+ *   DBG.gridSamples          → sample cells per row to log when not logging all
  */
 
 (function () {
+  // -----------------------------
+  // Debug / logging helpers
+  // -----------------------------
+  const DBG = {
+    verbose: true,
+    logMatrices: true,
+    logEveryGridCell: false, // WARNING: 60x60 grid = 3600 logs per run
+    gridSamples: 4,
+  };
+
+  const L = {
+    start(label) {
+      if (DBG.verbose) console.group(label);
+    },
+    end() {
+      if (DBG.verbose) console.groupEnd();
+    },
+    log(...args) {
+      if (DBG.verbose) console.log(...args);
+    },
+    table(obj) {
+      if (DBG.verbose && console.table) console.table(obj);
+    },
+    time(label) {
+      if (DBG.verbose) console.time(label);
+    },
+    timeEnd(label) {
+      if (DBG.verbose) console.timeEnd(label);
+    },
+  };
+
   // -----------------------------
   // Globals / State
   // -----------------------------
@@ -81,32 +118,38 @@
   }
 
   function setMode(m) {
+    L.start(`[UI] Set tool mode → ${m}`);
     toolMode = m;
-    // button styles
     [el.modeAdd, el.modeMove, el.modeRemove].forEach((btn) =>
       btn?.classList.remove("active")
     );
     if (m === "add") el.modeAdd?.classList.add("active");
     if (m === "move") el.modeMove?.classList.add("active");
     if (m === "remove") el.modeRemove?.classList.add("active");
-    // refresh map to rebind handlers & cursor
     drawMap(null);
+    L.end();
   }
 
   function addStationAt(xkm, ykm) {
     stations.push({ x: xkm, y: ykm, z: 0, _isOutlier: false });
     if (el.numStations) el.numStations.value = stations.length;
-    drawMap(null); // visual feedback now; press Run to recompute
+    L.log(`[Stations] Added at (x=${xkm.toFixed(2)}, y=${ykm.toFixed(2)})`);
+    drawMap(null);
   }
 
   function removeStationAtIndex(i) {
     if (i < 0 || i >= stations.length) return;
+    const removed = stations[i];
     stations.splice(i, 1);
     if (el.numStations) el.numStations.value = stations.length;
+    L.log(
+      `[Stations] Removed index ${i} @ (x=${removed.x.toFixed(
+        2
+      )}, y=${removed.y.toFixed(2)})`
+    );
     drawMap(null);
   }
-  // --- 2x2 symmetric eigen-decomp (for ellipse principal axes) ---
-  // Input = covariance matrix [ [a, b], [b, c] ]
+
   // --- 2x2 symmetric eigen-decomp (covariance -> axes) ---
   function eig2x2(a, b, c) {
     const tr = a + c,
@@ -114,7 +157,6 @@
     const disc = Math.max(0, tr * tr - 4 * det);
     const l1 = 0.5 * (tr + Math.sqrt(disc));
     const l2 = 0.5 * (tr - Math.sqrt(disc));
-    // eigenvector for l1
     let vx = b,
       vy = l1 - a;
     if (Math.abs(vx) + Math.abs(vy) < 1e-12) {
@@ -122,57 +164,7 @@
       vy = 0;
     }
     const n = Math.hypot(vx, vy) || 1;
-    return { l1, l2, ux: vx / n, uy: vy / n }; // major axis unit vector = (ux,uy)
-  }
-
-  // ---------- 1-σ ellipse from low-RMS grid cells ----------
-  function ellipseFromMisfit(xs, ys, Zr, frac = 0.2) {
-    // Flatten (x,y,rms)
-    const pts = [];
-    for (let j = 0; j < ys.length; j++) {
-      for (let i = 0; i < xs.length; i++) {
-        pts.push({ x: xs[i], y: ys[j], r: Zr[j][i] });
-      }
-    }
-    if (pts.length < 3) return null;
-
-    // Keep best `frac` by RMS (lower = better)
-    const rs = pts.map((p) => p.r).sort((a, b) => a - b);
-    const cut =
-      rs[
-        Math.floor(Math.max(0, Math.min(rs.length - 1, frac * (rs.length - 1))))
-      ];
-    const sel = pts.filter((p) => p.r <= cut);
-    if (sel.length < 3) return null;
-
-    // Mean
-    const mx = d3.mean(sel, (p) => p.x);
-    const my = d3.mean(sel, (p) => p.y);
-
-    // Unweighted covariance
-    let sxx = 0,
-      syy = 0,
-      sxy = 0;
-    for (const p of sel) {
-      const dx = p.x - mx,
-        dy = p.y - my;
-      sxx += dx * dx;
-      sxy += dx * dy;
-      syy += dy * dy;
-    }
-    const n = sel.length;
-    sxx /= n - 1;
-    syy /= n - 1;
-    sxy /= n - 1;
-
-    // Eigen → 1-σ radii and orientation
-    const { l1, l2, ux, uy } = eig2x2(sxx, sxy, syy);
-    const rx = Math.sqrt(Math.max(0, l1)); // 1σ along major
-    const ry = Math.sqrt(Math.max(0, l2)); // 1σ along minor
-    const thetaDeg = (Math.atan2(uy, ux) * 180) / Math.PI;
-
-    if (!isFinite(rx) || !isFinite(ry) || rx <= 0 || ry <= 0) return null;
-    return { cx: mx, cy: my, rx, ry, thetaDeg };
+    return { l1, l2, ux: vx / n, uy: vy / n };
   }
 
   function gaussian(std) {
@@ -211,24 +203,52 @@
   // Observations (noise + optional outlier)
   // -----------------------------
   function makeObservations(evt, vTrue, sigma, k) {
+    L.start("[Obs] Generate observations");
     const t0True = 0;
-    let tObs = stations.map((s) =>
-      travelTime(s.x, s.y, s.z, evt.x, evt.y, evt.z, t0True, vTrue)
-    );
-    tObs = tObs.map((t) => t + gaussian(sigma));
+
+    const tClean = stations.map((s, idx) => {
+      const t = travelTime(s.x, s.y, s.z, evt.x, evt.y, evt.z, t0True, vTrue);
+      L.log(`  • Clean t[${idx}] = ${t.toFixed(6)} s`);
+      return t;
+    });
+
+    let tObs = tClean.map((t, i) => {
+      const n = gaussian(sigma);
+      const noisy = t + n;
+      L.log(
+        `  • Noise for sta ${i}: ${n.toFixed(6)} → t_noisy = ${noisy.toFixed(
+          6
+        )} s`
+      );
+      return noisy;
+    });
 
     stations.forEach((s) => (s._isOutlier = false));
     injectedOutlierIndex = null;
 
-    // inject ±kσ outlier at one station
     if (k > 0 && stations.length) {
       const i = Math.floor(Math.random() * stations.length);
       const sign = Math.random() < 0.5 ? -1 : 1;
-      tObs[i] += sign * k * sigma;
+      const bump = sign * k * sigma;
+      tObs[i] += bump;
       stations[i]._isOutlier = true;
       injectedOutlierIndex = i;
-      console.log(`[Outlier] Station #${i} got ${sign > 0 ? "+" : "-"}${k}σ`);
+      L.log(
+        `  • [Outlier] Station #${i} got ${sign > 0 ? "+" : "-"}${k}σ = ${
+          bump.toFixed ? bump.toFixed(6) : bump
+        } s`
+      );
     }
+
+    L.table(
+      tObs.map((t, i) => ({
+        station: i,
+        clean_s: +tClean[i].toFixed(6),
+        observed_s: +t.toFixed(6),
+        outlier: i === injectedOutlierIndex,
+      }))
+    );
+    L.end();
     return tObs;
   }
 
@@ -236,31 +256,43 @@
   // Solves: (Gwᵀ Gw + λ² I) Δm = Gwᵀ dw
   // -----------------------------
   function solveNormalEq(Gw, dw, lambda) {
+    if (DBG.logMatrices) {
+      L.start("[Solver] Build normal equations");
+      L.log("Gw (whitened Jacobian):", Gw);
+      L.log("dw (whitened residuals):", dw);
+    }
     const GT = numeric.transpose(Gw); // (P x N)
     let AtA = numeric.dot(GT, Gw); // (P x P)
     const P = AtA.length;
     for (let i = 0; i < P; i++) AtA[i][i] += lambda * lambda;
     const Atb = numeric.dot(GT, dw); // (P)
+
+    if (DBG.logMatrices) {
+      L.log("A = (Gw^T Gw + λ² I):", AtA);
+      L.log("b = Gw^T dw:", Atb);
+    }
+
     const delta_m = numeric.solve(AtA, Atb);
+    if (DBG.logMatrices) {
+      L.log("Δm solution:", delta_m);
+      L.end();
+    }
     return { delta_m };
   }
 
   // -----------------------------
-  // Inversion for [x, y, z, t0, v]
-  // -----------------------------
-  // -----------------------------
   // Inversion for [x, y, z, t0, v]  -> returns { m, hist, ellipse }
   // -----------------------------
   function Inversion(tObs, start, lambda, sigma) {
+    L.start("[Inv] Start Gauss–Newton with Tikhonov");
     let m = [start.x, start.y, start.z, start.t0, start.v];
-    const hist = [];
+    L.log("Initial model m0 = [x, y, z, t0, v] =", m);
 
-    // protect against sigma = 0 in whitening
+    const hist = [];
     const sig = Math.max(1e-9, +sigma);
 
-    let G_last = null; // keep the last Jacobian (unwhitened)
     for (let it = 0; it < maxIter; it++) {
-      // forward
+      L.start(`[Iter ${it}] Forward model & residuals`);
       const tPred = stations.map((s) =>
         travelTime(s.x, s.y, s.z, m[0], m[1], m[2], m[3], m[4])
       );
@@ -270,21 +302,30 @@
       );
       hist.push(rms);
 
+      L.table(
+        tPred.map((tp, i) => ({
+          station: i,
+          t_pred_s: +tp.toFixed(6),
+          dt_s: +delta[i].toFixed(6),
+        }))
+      );
+      L.log(`RMS = ${rms.toFixed(6)} s`);
+      L.end();
+
       // Jacobian (N x 5)
+      L.start(`[Iter ${it}] Build Jacobian G (unwhitened)`);
       const G = stations.map((s) => {
         const dx = m[0] - s.x,
           dy = m[1] - s.y,
           dz = m[2] - s.z;
         const R = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1e-12;
         const v = m[4];
-        // [∂t/∂x, ∂t/∂y, ∂t/∂z, ∂t/∂t0, ∂t/∂v]
         return [dx / (v * R), dy / (v * R), dz / (v * R), 1.0, -R / (v * v)];
       });
+      if (DBG.logMatrices) L.log("G:", G);
+      L.end();
 
-      // keep the last unwhitened Jacobian for covariance later
-      G_last = G;
-
-      // whitening (scalar σ): Gw = G / σ ; dw = Δt / σ
+      // Whitening
       const w = 1 / sig;
       const Gw = G.map((row) => row.map((e) => e * w));
       const dw = delta.map((d) => d * w);
@@ -292,15 +333,26 @@
       // Solve (Gwᵀ Gw + λ² I) Δm = Gwᵀ dw
       const { delta_m } = solveNormalEq(Gw, dw, lambda);
 
-      // update
+      // Update
+      const m_old = m.slice();
       m = numeric.add(m, delta_m);
-      if (numeric.norm2(delta_m) < 1e-4) break;
+
+      L.start(`[Iter ${it}] Update model`);
+      L.log("m_old:", m_old);
+      L.log("Δm:", delta_m);
+      L.log("m_new:", m);
+      const stepNorm = numeric.norm2(delta_m);
+      L.log(`||Δm||2 = ${stepNorm.toExponential(6)}`);
+      L.end();
+
+      if (stepNorm < 1e-4) {
+        L.log(`[Iter ${it}] Converged: small update norm.`);
+        break;
+      }
     }
 
-    // ----- Posterior covariance at final estimate -----
-    // Using the whitened system: Cov(m) ≈ (Gwᵀ Gw + λ² I)^(-1) * σ²
-    // (more numerically stable than building from unwhitened G)
-    // Recompute Gw at m (or reuse last Gw by recalculating once here)
+    // Posterior covariance in whitened space
+    L.start("[Inv] Posterior covariance & 1-σ ellipse");
     const G = stations.map((s) => {
       const dx = m[0] - s.x,
         dy = m[1] - s.y,
@@ -309,39 +361,43 @@
       const v = m[4];
       return [dx / (v * R), dy / (v * R), dz / (v * R), 1.0, -R / (v * v)];
     });
-    const Gw = G.map((row) => row.map((e) => e / sig));
+    const Gw = G.map((row) => row.map((e) => e / Math.max(1e-9, +sigma)));
     const GTw = numeric.transpose(Gw);
-    let H = numeric.dot(GTw, Gw); // (5x5)
-    // add Tikhonov λ² I
+    let H = numeric.dot(GTw, Gw);
     for (let i = 0; i < H.length; i++) H[i][i] += lambda * lambda;
 
-    // invert (posterior metric in whitened space), then scale by σ²
     let Cov = null;
     try {
       Cov = numeric.inv(H);
+      L.log("Inv(H) succeeded.");
     } catch (e) {
+      L.log("Inv(H) failed → ellipse skipped.", e?.message || e);
       Cov = null;
     }
 
-    // Build 1-σ ellipse from the [x,y] block
     let ellipse = null;
     if (Cov) {
-      // scale to actual units: Cov_true ≈ Cov * σ²
-      const s2 = sig * sig;
+      const s2 = sigma * sigma;
       const Cxx = Cov[0][0] * s2;
       const Cxy = Cov[0][1] * s2;
       const Cyy = Cov[1][1] * s2;
 
       const { l1, l2, ux, uy } = eig2x2(Cxx, Cxy, Cyy);
-      const rx = Math.sqrt(Math.max(0, l1)); // 1-σ along major
-      const ry = Math.sqrt(Math.max(0, l2)); // 1-σ along minor
+      const rx = Math.sqrt(Math.max(0, l1));
+      const ry = Math.sqrt(Math.max(0, l2));
       const thetaDeg = Math.atan2(uy, ux) * (180 / Math.PI);
 
       if (isFinite(rx) && isFinite(ry) && rx > 0 && ry > 0) {
         ellipse = { cx: m[0], cy: m[1], rx, ry, thetaDeg };
+        L.log("1-σ ellipse:", ellipse);
+      } else {
+        L.log("Ellipse radii non-finite or non-positive → skipped.");
       }
     }
+    L.end();
 
+    L.log("[Inv] Final model (x,y,z,t0,v):", m);
+    L.log("[Inv] RMS history:", hist);
     return { m, hist, ellipse };
   }
 
@@ -353,17 +409,27 @@
     if (k > 0 && injectedOutlierIndex != null) {
       highlightIdx.add(injectedOutlierIndex);
     }
+    if (DBG.verbose)
+      L.log(
+        "[Highlight] indices:",
+        [...highlightIdx],
+        "outlierIndex:",
+        injectedOutlierIndex
+      );
   }
 
   // -----------------------------
   // Misfit grid (x,y), t0 optimized, v fixed to vStart
   // -----------------------------
   function misfitGrid(tObs, vFixed, N = 60) {
+    L.start(`[Misfit] Grid N=${N} with vFixed=${vFixed}`);
+    L.time("[Misfit] time");
     const xs = d3.scaleLinear().domain([XY.min, XY.max]).ticks(N);
     const ys = d3.scaleLinear().domain([XY.min, XY.max]).ticks(N);
     const Z = [];
     let zmin = Infinity,
       zmax = -Infinity;
+
     for (let j = 0; j < ys.length; j++) {
       const row = [];
       for (let i = 0; i < xs.length; i++) {
@@ -380,15 +446,42 @@
         const val = d3.mean(
           tObs.map((t, k) => {
             const r = t - (t0star + R_over_v[k]);
-            return r * r;
+            return r * r; // MSE
           })
         );
         row.push(val);
         if (val < zmin) zmin = val;
         if (val > zmax) zmax = val;
+
+        if (DBG.logEveryGridCell) {
+          L.log(
+            `  cell (i=${i}, j=${j}) x=${x.toFixed(2)} y=${y.toFixed(
+              2
+            )} t0*=${t0star.toFixed(6)} MSE=${val.toExponential(6)}`
+          );
+        }
       }
+
+      if (!DBG.logEveryGridCell && DBG.gridSamples > 0) {
+        // sample a few cells per row to keep console readable
+        const idxs = d3
+          .range(row.length)
+          .filter((ii) => ii % Math.ceil(row.length / DBG.gridSamples) === 0);
+        const sample = idxs.map((ii) => ({
+          i: ii,
+          x: xs[ii].toFixed(2),
+          MSE: row[ii],
+        }));
+        L.log(`  row j=${j}: sample cells`, sample);
+      }
+
       Z.push(row);
     }
+    L.timeEnd("[Misfit] time");
+    L.log(
+      `[Misfit] MSE range: [${zmin.toExponential(6)}, ${zmax.toExponential(6)}]`
+    );
+    L.end();
     return { xs, ys, Z, zmin, zmax };
   }
 
@@ -418,7 +511,6 @@
     const svg = wavesSel;
     svg.selectAll("*").remove();
 
-    // ---- layout: fixed width (no horizontal scroll), tall rows (vertical scroll) ----
     const tmin = d3.min(tClean) - 0.8;
     const tmax = d3.max(tClean) + 0.8;
     const pad = { l: 70, r: 30, t: 24, b: 40 };
@@ -427,7 +519,6 @@
     const H = pad.t + pad.b + rowHeight * tClean.length;
     svg.attr("height", H);
 
-    // ---- scales ----
     const x = d3
       .scaleLinear()
       .domain([tmin, tmax])
@@ -438,7 +529,6 @@
       .range([pad.t, H - pad.b])
       .paddingInner(0.25);
 
-    // ---- axes ----
     svg
       .append("g")
       .attr("transform", `translate(0,${H - pad.b})`)
@@ -475,7 +565,6 @@
       .attr("y2", (i) => yBand(i) + yBand.bandwidth() / 2)
       .attr("stroke", "#e5e7eb");
 
-    // ---- zig-zag (height ≈ 2× width) at each clean arrival ----
     const halfWidthSec = 0.15; // time half-width of zigzag
     const tailSec = 0.5; // baseline before/after
     const aspect = 2.0; // height = aspect × width
@@ -495,9 +584,9 @@
       const pts = [
         { t: tmin, y: cy },
         { t: t0 - tailSec, y: cy },
-        { t: t0 - halfWidthSec, y: cy - A }, // +peak
-        { t: t0, y: cy }, // baseline at arrival
-        { t: t0 + halfWidthSec, y: cy + A }, // -peak
+        { t: t0 - halfWidthSec, y: cy - A },
+        { t: t0, y: cy },
+        { t: t0 + halfWidthSec, y: cy + A },
         { t: t0 + tailSec, y: cy },
         { t: tmax, y: cy },
       ];
@@ -548,7 +637,7 @@
     // Cursor by mode
     svg.style("cursor", modeCursor[toolMode] || "default");
 
-    // ── Stations (triangles) ─────────────────────────────────────
+    // Stations
     const gStations = svg.append("g");
     const sel = gStations
       .selectAll("path.station")
@@ -565,14 +654,14 @@
     // Remove mode: click a station to delete it
     if (toolMode === "remove") {
       sel.on("click", (ev, d) => {
-        ev.stopPropagation(); // don't bubble to map bg
+        ev.stopPropagation();
         removeStationAtIndex(d.i);
       });
     } else {
       sel.on("click", null);
     }
 
-    // Move mode: drag behavior (no redraw during drag; update transform live)
+    // Move mode: drag behavior
     const drag = d3
       .drag()
       .on("start", function () {
@@ -582,27 +671,24 @@
       .on("drag", function (ev, d) {
         const xkm = clamp(x.invert(ev.x), XY.min, XY.max);
         const ykm = clamp(y.invert(ev.y), XY.min, XY.max);
-        // update data
         stations[d.i].x = xkm;
         stations[d.i].y = ykm;
-        // update this symbol position
         d3.select(this).attr("transform", `translate(${x(xkm)},${y(ykm)})`);
       })
       .on("end", function () {
         d3.select(this).attr("opacity", 1);
         svg.style("cursor", modeCursor[toolMode] || "default");
-        // keep map as-is; user presses Run to recompute inversion/misfit
       });
 
     if (toolMode === "move") {
       sel.call(drag);
     } else {
-      sel.on(".drag", null); // remove drag handlers if switching modes
+      sel.on(".drag", null);
     }
 
     if (ellipseParams) {
       const { cx, cy, rx, ry, thetaDeg } = ellipseParams;
-      const rxPx = Math.abs(x(cx + rx) - x(cx)); // 1σ in pixels
+      const rxPx = Math.abs(x(cx + rx) - x(cx));
       const ryPx = Math.abs(y(cy + ry) - y(cy));
       svg
         .append("g")
@@ -617,7 +703,7 @@
         .attr("stroke-width", 2);
     }
 
-    // Outlier ring(s) on top
+    // Outlier ring(s)
     const gRing = svg.append("g").attr("pointer-events", "none");
     highlightIdx.forEach((i) => {
       const s = stations[i];
@@ -651,7 +737,7 @@
         .attr("stroke-width", 1.2);
     }
 
-    // Background click for Add mode (only inside plot area)
+    // Background click for Add mode
     svg.on("click", (event) => {
       if (toolMode !== "add") return;
       if (event.target.closest("#map") !== svg.node()) return;
@@ -668,11 +754,6 @@
     svg.selectAll("*").remove();
     const { w, h } = getWH(svg);
 
-    // ────────────────────────────────────────────────────────────
-    // 1) Layout: reserve a dedicated bottom band for the colorbar
-    //    so it never collides with the x-axis.
-    //    plotBottomY = y of the x-axis (top of colorbar band)
-    // ────────────────────────────────────────────────────────────
     const pad = {
       l: 36,
       r: 36,
@@ -685,9 +766,6 @@
     const plotBottomY =
       h - (pad.bAxis + pad.cbGap + pad.cbBarH + pad.cbAxisGap);
 
-    // ────────────────────────────────────────────────────────────
-    // 2) Plot scales for map coordinates (x,y in km)
-    // ────────────────────────────────────────────────────────────
     const x = d3
       .scaleLinear()
       .domain([XY.min, XY.max])
@@ -697,9 +775,6 @@
       .domain([XY.min, XY.max])
       .range([plotBottomY, pad.t]);
 
-    // ────────────────────────────────────────────────────────────
-    // 3) Axes (x-axis sits above the colorbar band)
-    // ────────────────────────────────────────────────────────────
     svg
       .append("g")
       .attr("transform", `translate(0,${plotBottomY})`)
@@ -709,28 +784,17 @@
       .attr("transform", `translate(${pad.l},0)`)
       .call(d3.axisLeft(y).ticks(7).tickSizeOuter(0));
 
-    // ────────────────────────────────────────────────────────────
-    // 4) Misfit grid: returns MSE (mean-squared error) in s²
-    //    Convert MSE → RMS (seconds) for clearer interpretation.
-    // ────────────────────────────────────────────────────────────
-    const { xs, ys, Z, zmin, zmax } = misfitGrid(tObs, vStart, 60); // Z = MSE (s²)
-    const Zr = Z.map((row) => row.map((v) => Math.sqrt(Math.max(0, v)))); // Zr = RMS (s)
+    // Misfit grid (MSE → RMS)
+    const { xs, ys, Z, zmin, zmax } = misfitGrid(tObs, vStart, 60);
+    const Zr = Z.map((row) => row.map((v) => Math.sqrt(Math.max(0, v))));
     let rmin = d3.min(Zr.flat());
     let rmax = d3.max(Zr.flat());
+    L.log(`[Misfit] RMS range: [${rmin.toFixed(6)}, ${rmax.toFixed(6)}]`);
 
-    // Zr = RMS (seconds) already computed above
-    // ellipseParams = ellipseFromMisfit(xs, ys, Zr, 0.2); // keep 0.20, or try 0.10 for tighter
-
-    // ────────────────────────────────────────────────────────────
-    // 5) Color scale on RMS (seconds). Low=good → brighter.
-    // ────────────────────────────────────────────────────────────
     const color = d3
       .scaleSequential(d3.interpolateViridis)
       .domain([rmax, rmin]);
 
-    // ────────────────────────────────────────────────────────────
-    // 6) Heatmap cells (each cell = one (x,y) with RMS misfit)
-    // ────────────────────────────────────────────────────────────
     const cellW = x(xs[1]) - x(xs[0]) || 6;
     const cellH = y(ys[ys.length - 2]) - y(ys[ys.length - 1]) || 6;
     const gHeat = svg.append("g");
@@ -742,13 +806,11 @@
           .attr("y", y(ys[j]) - cellH / 2)
           .attr("width", cellW)
           .attr("height", cellH)
-          .attr("fill", color(Zr[j][i])); // <- color by RMS (seconds)
+          .attr("fill", color(Zr[j][i]));
       }
     }
 
-    // ────────────────────────────────────────────────────────────
-    // 7) Horizontal colorbar (RMS seconds) in the bottom band
-    // ────────────────────────────────────────────────────────────
+    // Colorbar
     const barX0 = pad.l,
       barX1 = w - pad.r;
     const barY = plotBottomY + pad.cbGap;
@@ -763,7 +825,6 @@
       .attr("x2", "100%")
       .attr("y2", "0%");
 
-    // Gradient defined directly in RMS space
     const nStops = 32;
     d3.range(nStops).forEach((i) => {
       const t = i / (nStops - 1);
@@ -774,7 +835,6 @@
         .attr("stop-color", color(r));
     });
 
-    // Bar rectangle
     svg
       .append("rect")
       .attr("x", barX0)
@@ -783,7 +843,6 @@
       .attr("height", pad.cbBarH)
       .style("fill", `url(#${gradientId})`);
 
-    // Colorbar axis with INTEGER RMS ticks (uniform spacing)
     const scaleBarX = d3
       .scaleLinear()
       .domain([rmin, rmax])
@@ -792,13 +851,12 @@
       end = Math.floor(rmax);
     const step = Math.max(1, Math.ceil((rmax - rmin) / 6));
     let rmsInts = d3.range(start, end + 1, step);
-    if (rmsInts.length === 0) rmsInts = [Math.round(rmin), Math.round(rmax)]; // fallback
+    if (rmsInts.length === 0) rmsInts = [Math.round(rmin), Math.round(rmax)];
 
     const axisBar = d3
       .axisBottom(scaleBarX)
       .tickValues(rmsInts)
-      .tickFormat((d) => d); // show integers (seconds)
-
+      .tickFormat((d) => d);
     const axisY = barY + pad.cbBarH + pad.cbAxisGap;
     svg
       .append("g")
@@ -806,7 +864,6 @@
       .attr("transform", `translate(0, ${axisY})`)
       .call(axisBar);
 
-    // End labels ABOVE the bar to avoid overlapping numbers
     const lblY = barY - 6;
     svg
       .append("text")
@@ -833,9 +890,7 @@
       .attr("fill", "#666")
       .text("RMS (seconds)");
 
-    // ────────────────────────────────────────────────────────────
-    // 8) Overlays: stations, outlier ring, and true event
-    // ────────────────────────────────────────────────────────────
+    // Overlays
     svg
       .append("g")
       .selectAll("path.station")
@@ -930,16 +985,22 @@
   }
 
   function generate() {
+    L.start("[Flow] Generate random stations");
     const n = +el.numStations.value || 6;
     stations = randomStations(n);
     highlightIdx.clear();
     injectedOutlierIndex = null;
+    L.table(
+      stations.map((s, i) => ({ i, x: s.x.toFixed(2), y: s.y.toFixed(2) }))
+    );
     drawMap(null);
+    L.end();
   }
 
   function run() {
     if (!validate()) return;
 
+    L.start("[Flow] Run experiment");
     // read UI
     eventTrue = {
       x: +el.xInput.value,
@@ -952,10 +1013,20 @@
     lambda = Math.max(0, +el.lambda.value);
     const k = parseOutlierLevel(); // 0/3/6
 
+    L.log("Inputs:", {
+      eventTrue,
+      vTrue,
+      vStart,
+      sigma,
+      lambda,
+      outlierLevel: k,
+      stations: stations.length,
+    });
+
     // forward: observations
     const tObs = makeObservations(eventTrue, vTrue, sigma, k);
 
-    // start model (keep simple like before; z starts at 0)
+    // start model
     const start = {
       x: d3.mean(stations, (s) => s.x) || 0,
       y: d3.mean(stations, (s) => s.y) || 0,
@@ -963,15 +1034,15 @@
       t0: 0,
       v: vStart,
     };
+    L.log("Start model guess:", start);
 
-    // invert (no SVD)
-    // invert (no SVD)
+    // invert
     const { m, hist, ellipse } = Inversion(tObs, start, lambda, sigma);
 
-    // use the Jacobian-based 1-σ ellipse from the solver
+    // use ellipse
     ellipseParams = ellipse || null;
 
-    // highlight EXACTLY the injected station (if any)
+    // highlight ONLY injected station
     setSingleHighlight(k);
 
     // draw
@@ -984,7 +1055,6 @@
     el.kIter.textContent = String(hist.length);
     el.kRMS.textContent = (hist.at(-1) ?? NaN).toFixed(3);
     el.kLambda.textContent = lambda.toFixed(2);
-    // if (el.kCond) el.kCond.textContent = "—";
 
     const fx = (n) => Number(n).toFixed(2);
     if (el.trueXYZ)
@@ -994,22 +1064,25 @@
     if (el.estXYZ)
       el.estXYZ.textContent = `x=${fx(m[0])}, y=${fx(m[1])}, z=${fx(m[2])}`;
 
-    console.log({
+    // Final summary dump
+    console.log("[RESULT]", {
       stations,
       injectedOutlierIndex,
       highlightIdx: [...highlightIdx],
-      finalModel: {
-        xs: m[0],
-        ys: m[1],
-        zs: m[2],
-        t0: m[3],
-        v: m[4],
-      },
+      finalModel: { xs: m[0], ys: m[1], zs: m[2], t0: m[3], v: m[4] },
       rmsHistory: hist,
+      lambda,
+      sigma,
+      vTrue,
+      vStart,
+      eventTrue,
+      ellipseParams,
     });
+    L.end();
   }
 
   function reset() {
+    L.start("[Flow] Reset");
     stations = [];
     eventTrue = { x: 10, y: 5, z: 0 };
     highlightIdx.clear();
@@ -1035,12 +1108,9 @@
     convSel.selectAll("*").remove();
     el.kIter.textContent = "—";
     el.kRMS.textContent = "—";
-    // if (el.kCond) el.kCond.textContent = "—";
-
     // el.kLambda.textContent = "—";
-
-    // reset waveforms
     wavesSel.selectAll("*").remove();
+    L.end();
   }
 
   el.btnGenerate.addEventListener("click", generate);
