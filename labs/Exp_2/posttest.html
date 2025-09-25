@@ -24,7 +24,10 @@
         document.getElementById("posttest").className = "active treeview";
       };
     </script>
+
+    <!-- ===== Additive responsive styles (nothing removed) ===== -->
     <style>
+      /* Your original styles */
       #toggle_nav:hover {
         background-color: #1261a0;
       }
@@ -40,6 +43,151 @@
       #posttest:hover,
       #references:hover {
         background-color: #009dff;
+      }
+
+      /* ---- Enhancements ---- */
+      :root {
+        --page-pad: 24px;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: var(--page-pad);
+        background: #fff;
+      }
+
+      /* Make all images (logo, equations) fluid */
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* Navbar brand image: override fixed inline width for responsiveness */
+      .navbar .navbar-brand img {
+        display: block;
+        height: 50px;
+        width: auto !important; /* overrides inline width:400px */
+        max-width: 100%;
+        margin-top: -15px;
+      }
+
+      /* Breadcrumbs: scroll horizontally on narrow screens */
+      .content-header .breadcrumb {
+        white-space: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Quiz: better tap targets & spacing on mobile */
+      #postQuizForm ol {
+        padding-left: 20px;
+      }
+      #postQuizForm li {
+        margin: 10px 0 16px;
+      }
+      #postQuizForm label {
+        display: block;
+        line-height: 1;
+        margin: 1px 0;
+        cursor: pointer;
+      }
+      #postQuizForm input[type="radio"] {
+        transform: translateY(1px);
+        margin-right: 6px;
+      }
+
+      /* Submit button (kept your original, added responsiveness below) */
+      .quiz-submit-btn {
+        background-color: #4caf50; /* Green */
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-size: 16px;
+        margin-left: 40px;
+        margin-top: 40px;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      .quiz-submit-btn:hover {
+        background-color: #45a049;
+        transform: scale(1.03);
+      }
+      .quiz-submit-btn:active {
+        transform: scale(0.98);
+        background-color: #3e8e41;
+      }
+
+      /* Sidebar becomes overlay drawer on mobile */
+      @media (max-width: 991px) {
+        body {
+          margin: 14px;
+        }
+        .main-sidebar {
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          left: -240px; /* hidden by default */
+          width: 240px;
+          max-width: 80vw;
+          z-index: 1040;
+          transition: left 0.25s ease;
+        }
+        .sidebar-open .main-sidebar {
+          left: 0;
+        }
+
+        /* Dim page behind the drawer */
+        .sidebar-open .content-wrapper::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 1039;
+        }
+
+        /* Content full-width */
+        .content-wrapper,
+        .right-side,
+        .main-footer,
+        .main-header .navbar {
+          margin-left: 0 !important;
+        }
+
+        /* Logo a bit smaller on phones */
+        .navbar .navbar-brand img {
+          height: 40px;
+          margin-top: -10px;
+        }
+
+        /* Quiz: full-width, comfy spacing */
+        .quiz-submit-btn {
+          width: 100%;
+          margin-left: 0;
+          margin-top: 20px;
+        }
+      }
+
+      @media (max-width: 575px) {
+        body {
+          margin: 10px;
+        }
+        .content-header .breadcrumb {
+          font-size: 12px;
+        }
+        .logo p {
+          font-size: 0.95em !important;
+        }
+      }
+
+      @media (min-width: 1200px) {
+        body {
+          margin: var(--page-pad);
+        }
       }
     </style>
   </head>
@@ -310,6 +458,7 @@
             </ol>
 
             <style>
+              /* kept your original button styles above; this block remains for completeness */
               .quiz-submit-btn {
                 background-color: #4caf50; /* Green */
                 color: white;
@@ -324,12 +473,10 @@
                 transition: background-color 0.3s ease, transform 0.2s ease;
                 box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
               }
-
               .quiz-submit-btn:hover {
                 background-color: #45a049;
                 transform: scale(1.03);
               }
-
               .quiz-submit-btn:active {
                 transform: scale(0.98);
                 background-color: #3e8e41;
@@ -389,6 +536,31 @@
         </h4>
       </footer>
     </div>
+
+    <!-- Helper: mobile drawer toggle & click-outside to close -->
+    <script>
+      (function () {
+        var toggle = document.getElementById("toggle_nav");
+        if (toggle) {
+          toggle.addEventListener("click", function (e) {
+            e.preventDefault();
+            document.body.classList.toggle("sidebar-open");
+          });
+        }
+        document.addEventListener("click", function (e) {
+          if (document.body.classList.contains("sidebar-open")) {
+            var sidebar = document.querySelector(".main-sidebar");
+            if (
+              sidebar &&
+              !sidebar.contains(e.target) &&
+              !e.target.closest("#toggle_nav")
+            ) {
+              document.body.classList.remove("sidebar-open");
+            }
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
 

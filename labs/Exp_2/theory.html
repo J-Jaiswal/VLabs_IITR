@@ -17,67 +17,242 @@
     />
     <!-- Theme style -->
     <link rel="stylesheet" href="../../dist/css/AdminLTE.css" />
-    <!-- AdminLTE Skins. Choose a skin from the css/skins folder instead of downloading all of them to reduce the load. -->
+    <!-- AdminLTE Skins -->
     <link rel="stylesheet" href="../../dist/css/skins/_all-skins.min.css" />
     <script>
       window.onload = function () {
         document.getElementById("theory").className = "active treeview";
       };
     </script>
+
+    <!-- ====== Responsive Enhancements (adds only; nothing removed) ====== -->
     <style>
+      /* Base */
+      :root {
+        --page-pad: 24px;
+        --card-pad: 14px 16px;
+        --text: #1f2937;
+        --headline: #111827;
+        --border: #e5e7eb;
+        --card: #fafafa;
+        --eqbg: #f8fafc;
+        --codebg: #eef2f7;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
       body {
         font-family: Arial, sans-serif;
         line-height: 1.6;
-        margin: 24px;
-        color: #1f2937;
+        margin: var(--page-pad);
+        color: var(--text);
         background: #fff;
       }
+
+      /* Make all images fluid by default (equations, logos, etc.) */
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
       p,
       li {
         text-align: justify;
       }
+
       h1,
       h2,
       h3 {
         margin: 10px 0 6px;
-        color: #111827;
+        color: var(--headline);
       }
+
       .card {
-        border: 1px solid #e5e7eb;
+        border: 1px solid var(--border);
         border-radius: 12px;
-        padding: 14px 16px;
+        padding: var(--card-pad);
         margin: 12px 0;
-        background: #fafafa;
+        background: var(--card);
       }
+
       .eq {
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
+        background: var(--eqbg);
+        border: 1px solid var(--border);
         border-radius: 8px;
         padding: 8px 10px;
         overflow: auto;
         margin: 8px 0;
       }
+
       code {
-        background: #eef2f7;
+        background: var(--codebg);
         padding: 2px 6px;
         border-radius: 6px;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
           "Liberation Mono", monospace;
       }
+
       .muted {
         color: #6b7280;
       }
       .hi {
         color: #0ea5e9;
         font-weight: 600;
-      } /* accent highlight */
+      }
       .warn {
         color: #a855f7;
         font-weight: 600;
-      } /* uncertainty highlight */
+      }
+
       ul,
       ol {
         margin-left: 18px;
+      }
+
+      /* Navbar brand image scaling */
+      .navbar .navbar-brand img {
+        display: block;
+        height: 50px;
+        width: auto; /* let width auto-scale */
+        max-width: 100%; /* prevent overflow */
+        margin-top: -15px;
+      }
+
+      /* Breadcrumb: allow horizontal scroll on mobile to avoid wrapping chaos */
+      .content-header .breadcrumb {
+        white-space: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Equation containers: ensure no sideways overflow breaks layout */
+      .eq .math,
+      .eq img {
+        max-width: 100%;
+      }
+
+      /* Keep theory blocks readable on very small screens */
+      #theory-brief {
+        overflow-wrap: anywhere;
+      }
+
+      /* Sidebar colors already set inline; improve touch target spacing */
+      .sidebar-menu > li > a {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+
+      /* Content wrapper breathing room when sidebar overlays on mobile */
+      .content-wrapper {
+        background: #fff;
+      }
+
+      /* ===== Mobile-first adjustments ===== */
+      @media (max-width: 991px) {
+        /* Reduce page edge margins on tablets/phones */
+        body {
+          margin: 14px;
+        }
+
+        /* Slightly reduce heading sizes for small screens */
+        h1 {
+          font-size: 1.35rem;
+        }
+        h2 {
+          font-size: 1.15rem;
+        }
+        h3 {
+          font-size: 1.05rem;
+        }
+
+        /* Cards: tighter padding */
+        .card {
+          padding: 12px 12px;
+        }
+
+        /* Navbar brand image a bit smaller on narrow screens */
+        .navbar .navbar-brand img {
+          height: 40px;
+          margin-top: -10px;
+        }
+
+        /* AdminLTE sidebar: turn into overlay drawer */
+        .main-sidebar {
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          left: -240px; /* hidden by default */
+          width: 240px;
+          max-width: 80vw;
+          z-index: 1040; /* above content */
+          transition: left 0.25s ease;
+        }
+        .sidebar-open .main-sidebar {
+          left: 0;
+        }
+
+        /* Dim background when sidebar open (AdminLTE adds .sidebar-open on body) */
+        .sidebar-open .content-wrapper::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 1039;
+        }
+
+        /* Make content span full width */
+        .content-wrapper,
+        .right-side,
+        .main-footer,
+        .main-header .navbar {
+          margin-left: 0 !important;
+        }
+      }
+
+      /* ===== Tiny phones ===== */
+      @media (max-width: 575px) {
+        /* Even tighter body margin */
+        body {
+          margin: 10px;
+        }
+
+        /* Compress paddings */
+        .card {
+          padding: 10px;
+        }
+
+        /* Code/eq blocks scroll nicely */
+        .eq {
+          padding: 8px;
+        }
+        code {
+          display: inline-block;
+          max-width: 100%;
+          overflow-x: auto;
+        }
+
+        /* Breadcrumb smaller text */
+        .content-header .breadcrumb {
+          font-size: 12px;
+        }
+
+        /* Header lab title: keep on one line without overflow */
+        .logo p {
+          font-size: 0.95em !important;
+        }
+      }
+
+      /* ===== Large screens (keeps your original look) ===== */
+      @media (min-width: 1200px) {
+        body {
+          margin: var(--page-pad);
+        }
+        .card {
+          padding: var(--card-pad);
+        }
       }
     </style>
   </head>
@@ -98,12 +273,14 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="http://iitb.ac.in"
-            ><span
-              ><img
+          <a class="navbar-brand" href="http://iitb.ac.in">
+            <span>
+              <img
                 src="images/iitrLogo.png"
-                style="margin-top: -15px; height: 50px; width: 400px" /></span
-          ></a>
+                style="height: 50px; width: 400px"
+              />
+            </span>
+          </a>
         </div>
         <div class="collapse navbar-collapse" id="navbar-ex-collapse"></div>
       </div>
@@ -123,7 +300,8 @@
         >
           <p align="center" style="font-size: 1em"><b>Geophysics Lab</b></p>
         </a>
-        <!-- Header Navbar: style can be found in header.less -->
+
+        <!-- Header Navbar -->
         <nav class="navbar navbar-static-top" style="background-color: #009dff">
           <!-- Sidebar toggle button-->
           <a
@@ -142,9 +320,7 @@
                   ><i class="fa fa-dashboard"></i>Geophysics Lab</a
                 >
               </li>
-              <li>
-                <a href="#">Finding location of an earthquake</a>
-              </li>
+              <li><a href="#">Finding location of an earthquake</a></li>
             </ol>
           </section>
         </nav>
@@ -152,14 +328,13 @@
 
       <!-- Left side column. contains the logo and sidebar -->
       <aside class="main-sidebar" style="background-color: #1261a0">
-        <!-- sidebar: style can be found in sidebar.less -->
         <section class="sidebar">
           <!-- search form -->
           <form action="#" method="get" class="sidebar-form">
             <div class="input-group"></div>
           </form>
-          <!-- /.sear ch form -->
-          <!-- sidebar menu: : style can be found in sidebar.less -->
+
+          <!-- sidebar menu -->
           <ul class="sidebar-menu" style="background-color: #1261a0">
             <li class="treeview" id="aim">
               <a href="index.html" id="aim">
@@ -173,29 +348,12 @@
                 <span style="color: white">Theory</span>
               </a>
             </li>
-            <!--   <li class="treeview" id="numerical">
-                    <a href="numerical.php">
-                        <i class="fa fa-laptop"></i>
-                        <span>Numerical</span>
-                        <span class="pull-right-container">
-                        </span>
-                    </a>
-                </li>
-                <li class="treeview" id="program">
-                    <a href="program.php">
-                        <i class="fa fa-laptop"></i>
-                        <span>Program</span>
-                        <span class="pull-right-container">
-                        </span>
-                    </a>
-                </li> -->
             <li class="treeview" id="pretest">
               <a href="pretest.html" id="pretest">
                 <i class="fa fa-files-o" style="color: white"></i>
                 <span style="color: white">Pre Test</span>
               </a>
             </li>
-
             <li class="treeview" id="procedure">
               <a href="procedure.html" id="procedure">
                 <i class="fa fa-files-o" style="color: white"></i>
@@ -209,7 +367,6 @@
                 <span class="pull-right-container"> </span>
               </a>
             </li>
-
             <li class="treeview" id="posttest">
               <a href=" posttest.html" id="posttest">
                 <i class="fa fa-files-o" style="color: white"> </i>
@@ -226,7 +383,6 @@
             </li>
           </ul>
         </section>
-        <!-- /.sidebar -->
       </aside>
 
       <div class="content-wrapper">
@@ -237,57 +393,62 @@
         <!-- Main content -->
         <section class="content">
           <!-- 1) Workflow -->
-           <!-- QUICK THEORY OVERVIEW -->
-<!-- QUICK THEORY OVERVIEW (plain-language, no symbols/equations) -->
-<div class="card" id="theory-brief">
-  <h2> Overview</h2>
+          <!-- QUICK THEORY OVERVIEW -->
+          <!-- QUICK THEORY OVERVIEW (plain-language, no symbols/equations) -->
+          <div class="card" id="theory-brief">
+            <h2>Overview</h2>
 
-  <p><b>Arrival-Time </b> —
-    Imagine a wave leaving the earthquake and traveling in a straight line at a constant speed.
-    The time a station records is just “when the quake started” plus “how long the wave took to get there,”
-    which depends on how far the station is and how fast the wave travels.
-  </p>
+            <p>
+              <b>Arrival-Time </b> — Imagine a wave leaving the earthquake and
+              traveling in a straight line at a constant speed. The time a
+              station records is just “when the quake started” plus “how long
+              the wave took to get there,” which depends on how far the station
+              is and how fast the wave travels.
+            </p>
 
-  <p><b>Synthetic Arrival Times</b> —
-    Real measurements are never perfect. To mimic that, we start from the ideal time,
-    add a small random error (like human picking uncertainty), and sometimes add one big mistake on purpose
-    to see how the method handles bad data.
-  </p>
+            <p>
+              <b>Synthetic Arrival Times</b> — Real measurements are never
+              perfect. To mimic that, we start from the ideal time, add a small
+              random error (like human picking uncertainty), and sometimes add
+              one big mistake on purpose to see how the method handles bad data.
+            </p>
 
-  <p><b>Inverse Modeling</b> —
-    We guess the earthquake’s location, depth, start time, and wave speed.
-    Then we compare predicted times with the measured ones, look at the differences,
-    and adjust our guess to make those differences smaller.
-    We also give less weight to noisier stations and take careful, stabilized steps so the solution stays sensible.
-  </p>
+            <p>
+              <b>Inverse Modeling</b> — We guess the earthquake’s location,
+              depth, start time, and wave speed. Then we compare predicted times
+              with the measured ones, look at the differences, and adjust our
+              guess to make those differences smaller. We also give less weight
+              to noisier stations and take careful, stabilized steps so the
+              solution stays sensible.
+            </p>
 
-  <p><b>Misfit Map</b> —
-    This is a heatmap showing “how well” each map location explains the data (for a chosen depth and assumed speed).
-    Each pixel tests one location: warmer colors mean a better match.
-    The best area is where the predictions agree most with the observations.
-  </p>
-</div>
+            <p>
+              <b>Misfit Map</b> — This is a heatmap showing “how well” each map
+              location explains the data (for a chosen depth and assumed speed).
+              Each pixel tests one location: warmer colors mean a better match.
+              The best area is where the predictions agree most with the
+              observations.
+            </p>
+          </div>
 
-
-         
           <!-- 2) ARRIVAL-TIME CALCULATION (forward physics) -->
-  <div class="card">
-  <h2>Arrival-Times Calculation (Forward Model)</h2>
+          <div class="card">
+            <h2>Arrival-Times Calculation (Forward Model)</h2>
 
-  <!-- 1) Brief theory & explanation -->
-  <!-- <h3 style="margin:8px 0 6px;">Brief theory & explanation</h3> -->
-  <p>
-    In a constant-speed medium, the first P-wave travels in a straight line from the source to each station.
-    The recorded time at a station equals the earthquake’s start time plus the travel time, which depends on
-    how far the station is from the source and how fast the wave moves.
-  </p>
-  <p>
-    These predicted times form the “forward model.” When they closely match the measured picks, our guessed
-    source location, origin time, and speed are likely correct.
-  </p>
+            <p>
+              In a constant-speed medium, the first P-wave travels in a straight
+              line from the source to each station. The recorded time at a
+              station equals the earthquake’s start time plus the travel time,
+              which depends on how far the station is from the source and how
+              fast the wave moves.
+            </p>
+            <p>
+              These predicted times form the “forward model.” When they closely
+              match the measured picks, our guessed source location, origin
+              time, and speed are likely correct.
+            </p>
 
-  <!-- 2) Equations -->
-  <div
+            <div
               style="
                 display: block;
                 max-width: min(760px, 92vw);
@@ -307,66 +468,121 @@
                     letter-spacing: 0.02px;
                   "
                 >
-                   <!-- Distance R_i -->
-  <div style="display:block;max-width:min(760px,92vw);margin:8px auto;text-align:center;line-height:1.6;overflow-wrap:anywhere;">
-    <img
-      src="https://latex.codecogs.com/png.image?\dpi{110}R_i=\sqrt{(x_s-x_i)^2&plus;(y_s-y_i)^2&plus;(z_s-z_i)^2}"
-      alt="R_i distance"
-      style="max-width:100%;height:auto;"
-    />
-    <!-- <div style="font-size:.95rem;color:#555;margin-top:4px;">(Distance from source to station i)</div> -->
-  </div>
+                  <!-- Distance R_i -->
+                  <div
+                    style="
+                      display: block;
+                      max-width: min(760px, 92vw);
+                      margin: 8px auto;
+                      text-align: center;
+                      line-height: 1.6;
+                      overflow-wrap: anywhere;
+                    "
+                  >
+                    <img
+                      src="https://latex.codecogs.com/png.image?\dpi{110}R_i=\sqrt{(x_s-x_i)^2&plus;(y_s-y_i)^2&plus;(z_s-z_i)^2}"
+                      alt="R_i distance"
+                      style="max-width: 100%; height: auto"
+                    />
+                  </div>
 
-  <!-- Forward model g_i(m) -->
-  <div style="display:block;max-width:min(760px,92vw);margin:8px auto;text-align:center;line-height:1.6;overflow-wrap:anywhere;">
-    <img
-      src="https://latex.codecogs.com/png.image?\dpi{110}g_i(\mathbf{m})=t_0&plus;\frac{R_i}{v}"
-      alt="forward model g_i"
-      style="max-width:100%;height:auto;"
-    />
-    <!-- <div style="font-size:.95rem;color:#555;margin-top:4px;">(Predicted arrival time at station i)</div> -->
-  </div>
+                  <!-- Forward model g_i(m) -->
+                  <div
+                    style="
+                      display: block;
+                      max-width: min(760px, 92vw);
+                      margin: 8px auto;
+                      text-align: center;
+                      line-height: 1.6;
+                      overflow-wrap: anywhere;
+                    "
+                  >
+                    <img
+                      src="https://latex.codecogs.com/png.image?\dpi{110}g_i(\mathbf{m})=t_0&plus;\frac{R_i}{v}"
+                      alt="forward model g_i"
+                      style="max-width: 100%; height: auto"
+                    />
+                  </div>
                 </span>
               </span>
             </div>
 
-
-
-  <!-- 3) Symbols (what they mean) -->
-  <!-- <h3 style="margin:14px 0 8px;">Symbols (what they mean)</h3> -->
-  <ul style="margin:0;padding-left:18px;">
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}R_i" alt="R_i" /> — distance from source to station i (km).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}(x_s,y_s,z_s)" alt="xs ys zs" /> — source (earthquake) coordinates (km).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}(x_i,y_i,z_i)" alt="xi yi zi" /> — station i coordinates (km).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}t_0" alt="t0" /> — origin (start) time of the earthquake (s).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}v" alt="v" /> — P-wave speed (km·s^{-1}).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}g_i(\mathbf{m})" alt="g_i(m)" /> — predicted arrival time at station i (s).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}=[x_s,y_s,z_s,t_0,v]" alt="m vector" /> — model parameters we estimate.</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}i=1,\dots,N" alt="i index" /> — station index (there are N stations).</li>
-  </ul>
-
-  <!-- <p style="margin-top:10px;font-size:.95rem;color:#555;">
-    Units: coordinates in km, speed in km·s<sup>−1</sup>, times in seconds.
-  </p> -->
-</div>
-
-
-
+            <ul style="margin: 0; padding-left: 18px">
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}R_i"
+                  alt="R_i"
+                />
+                — distance from source to station i (km).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}(x_s,y_s,z_s)"
+                  alt="xs ys zs"
+                />
+                — source (earthquake) coordinates (km).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}(x_i,y_i,z_i)"
+                  alt="xi yi zi"
+                />
+                — station i coordinates (km).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}t_0"
+                  alt="t0"
+                />
+                — origin (start) time of the earthquake (s).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}v"
+                  alt="v"
+                />
+                — P-wave speed (km·s^{-1}).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}g_i(\mathbf{m})"
+                  alt="g_i(m)"
+                />
+                — predicted arrival time at station i (s).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}=[x_s,y_s,z_s,t_0,v]"
+                  alt="m vector"
+                />
+                — model parameters we estimate.
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}i=1,\dots,N"
+                  alt="i index"
+                />
+                — station index (there are N stations).
+              </li>
+            </ul>
+          </div>
 
           <!-- 3) SYNTHETIC TIMES WITH NOISE & OUTLIER -->
           <div class="card">
             <h2>Synthetic Arrival Times</h2>
-            <!-- <h3 style="margin:8px 0 6px;">Brief theory & explanation</h3> -->
-  <p>
-    Real arrival-time picks contain randomness (human picking uncertainty, instrument noise, etc.).
-    To mimic that, we start from the ideal, noise-free travel time and add small random errors.
-    We can also inject one deliberately large mistake (an outlier) to see how robust the inversion is.
-  </p>
-  <p>
-    These simulated “observed” times are what the inversion tries to fit. If our model is right and noise is small,
-    the average mismatch will be close to the noise level.
-  </p>
-            <!-- t_obs -->
+            <p>
+              Real arrival-time picks contain randomness (human picking
+              uncertainty, instrument noise, etc.). To mimic that, we start from
+              the ideal, noise-free travel time and add small random errors. We
+              can also inject one deliberately large mistake (an outlier) to see
+              how robust the inversion is.
+            </p>
+            <p>
+              These simulated “observed” times are what the inversion tries to
+              fit. If our model is right and noise is small, the average
+              mismatch will be close to the noise level.
+            </p>
+
             <div
               style="
                 display: block;
@@ -394,21 +610,7 @@
                 </span>
               </span>
             </div>
-            <!-- <div>
-              <p>
-                <b>Symbols:</b> <img src="https://latex.codecogs.com/png.image?\dpi{110}\(t_i^{\text{obs}}\)" title="\(t_i^{\text{obs}}\)" /> observed pick (s);
-                <img src="https://latex.codecogs.com/png.image?\dpi{110}\(t_0^{\text{true}}" title="\(t_0^{\text{true}}" />, <img src="https://latex.codecogs.com/png.image?\dpi{110}v^{\text{true}},\mathbf&space;m^{\text{true}}\)" title="v^{\text{true}},\mathbf m^{\text{true}}\)" />
-                true values; <img src="https://latex.codecogs.com/png.image?\dpi{110}\(\varepsilon_i\)" title="\(\varepsilon_i\)" /> random error;
-                <img src="https://latex.codecogs.com/png.image?\dpi{110}\(\delta_i^{\text{outlier}}\)" title="\(\delta_i^{\text{outlier}}\)" /> optional gross error.
-              </p>
-              <p>
-                <b>Theory:</b> Observations equal noiseless prediction plus
-                small random error, and sometimes a large mistake to test
-                robustness.
-              </p>
-            </div> -->
 
-            <!-- noise & outlier -->
             <div
               style="
                 display: block;
@@ -436,221 +638,541 @@
                 </span>
               </span>
             </div>
-        
-          
 
-
-
-
-
-  <!-- 3) Symbols (what they mean) -->
-
-  <ul style="margin:0;padding-left:18px;">
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}t_i^{\mathrm{obs}}" alt="t_i^obs" /> — the simulated “observed” pick at station i (seconds).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}t_0^{\mathrm{true}}" alt="t0 true" /> — the true (hidden) origin time (seconds).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}^{\mathrm{true}}" alt="m true" /> — the true (hidden) source parameters (location, depth, etc.).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}v^{\mathrm{true}}" alt="v true" /> — the true wave speed (km·s<sup>−1</sup>).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}R_i(\mathbf{m}^{\mathrm{true}})" alt="Ri of m true" /> — true source–station distance for station i (km).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\varepsilon_i" alt="epsilon_i" /> — random pick error (“noise”) with zero mean and spread set by σ (seconds).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\sigma" alt="sigma" /> — noise standard deviation; larger values mean more scattered picks (seconds).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\delta_i^{\mathrm{outlier}}" alt="delta outlier" /> — optional large error added to one pick (seconds).</li>
-    <li><img src="https://latex.codecogs.com/png.image?\dpi{110}k" alt="k" /> — outlier size in “sigma units” (e.g., 3 means three times the noise spread).</li>
-  </ul>
-
-
+            <ul style="margin: 0; padding-left: 18px">
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}t_i^{\mathrm{obs}}"
+                  alt="t_i^obs"
+                />
+                — the simulated “observed” pick at station i (seconds).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}t_0^{\mathrm{true}}"
+                  alt="t0 true"
+                />
+                — the true (hidden) origin time (seconds).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}^{\mathrm{true}}"
+                  alt="m true"
+                />
+                — the true (hidden) source parameters (location, depth, etc.).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}v^{\mathrm{true}}"
+                  alt="v true"
+                />
+                — the true wave speed (km·s<sup>−1</sup>).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}R_i(\mathbf{m}^{\mathrm{true}})"
+                  alt="Ri of m true"
+                />
+                — true source–station distance for station i (km).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\varepsilon_i"
+                  alt="epsilon_i"
+                />
+                — random pick error with zero mean and spread set by σ
+                (seconds).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\sigma"
+                  alt="sigma"
+                />
+                — noise standard deviation (seconds).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\delta_i^{\mathrm{outlier}}"
+                  alt="delta outlier"
+                />
+                — optional large error added to one pick (seconds).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}k"
+                  alt="k"
+                />
+                — outlier size in “sigma units”.
+              </li>
+            </ul>
           </div>
 
-          <!-- 4) INVERSE MODELING: RMS, JACOBIAN, WHITENING, TIKHONOV -->
-        <div class="card">
-  <h2>Inverse Modeling</h2>
+          <!-- 4) INVERSE MODELING -->
+          <div class="card">
+            <h2>Inverse Modeling</h2>
 
-  <p>
-    We estimate the model <img src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}" alt="m" />
-    by minimizing squared residuals. Because
-    <img src="https://latex.codecogs.com/png.image?\dpi{110}g(\mathbf{m})" alt="g(m)" />
-    is nonlinear, we linearize around the current guess
-    <img src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}^{(k)}" alt="m^(k)" />,
-    solve a damped system for
-    <img src="https://latex.codecogs.com/png.image?\dpi{110}\Delta\mathbf{m}" alt="Delta m" />,
-    and iterate.
-  </p>
+            <p>
+              We estimate the model
+              <img
+                src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}"
+                alt="m"
+              />
+              by minimizing squared residuals. Because
+              <img
+                src="https://latex.codecogs.com/png.image?\dpi{110}g(\mathbf{m})"
+                alt="g(m)"
+              />
+              is nonlinear, we linearize around the current guess
+              <img
+                src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}^{(k)}"
+                alt="m^(k)"
+              />, solve a damped system for
+              <img
+                src="https://latex.codecogs.com/png.image?\dpi{110}\Delta\mathbf{m}"
+                alt="Delta m"
+              />, and iterate.
+            </p>
 
-  <!-- Residuals & RMS -->
-  <p><b>Residuals and RMS</b><p style="margin:4px 0 8px;"> Residual = measured minus predicted; RMS = typical size of those residuals. Smaller is better.</p></p>
-  <div style="display:block;max-width:min(760px,92vw);margin:12px auto;text-align:center;line-height:1.6;overflow-wrap:anywhere;">
-    <span class="eq" style="display:block">
-      <span class="math" style="display:inline-block;font-size:clamp(1.22rem,1rem + 1vw,1.95rem);font-weight:400;letter-spacing:0.02px;">
-        <img
-          src="https://latex.codecogs.com/png.image?\dpi{110}r_i(\mathbf{m})=t_i^{\mathrm{obs}}-g_i(\mathbf{m}),\qquad\mathrm{RMS}(\mathbf{m})=\sqrt{\frac{1}{N}\sum_{i=1}^{N}r_i^2}"
-          alt="residual and RMS"
-        />
-      </span>
-    </span>
-  </div>
-  <div>
-    <!-- <p><b>Symbols (for this equation):</b></p> -->
-    <ul style="margin:0;padding-left:18px;">
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}r_i(\mathbf{m})" alt="ri" /> — residual at station i (observed − predicted) [s].</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}t_i^{\mathrm{obs}}" alt="tiobs" /> — observed pick time at station i [s].</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}g_i(\mathbf{m})" alt="g_i" /> — predicted arrival time at station i [s].</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\mathrm{RMS}(\mathbf{m})" alt="RMS" /> — root-mean-square misfit over all stations [s].</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}N" alt="N" /> — number of stations.</li>
-    </ul>
-  </div>
+            <p><b>Residuals and RMS</b></p>
+            <p style="margin: 4px 0 8px">
+              Residual = measured minus predicted; RMS = typical size of those
+              residuals. Smaller is better.
+            </p>
 
-  <!-- Jacobian / Linearization -->
-  <p style="margin-top:14px;"><b>Linearization (Jacobian)</b>  <p style="margin:4px 0 8px;"> Approximate the nonlinear model by a straight line near the current guess.</p>
-    <!-- <img src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}^{(k)}" alt="m^(k)" /> -->
-  </p>
-  <div style="display:block;max-width:min(760px,92vw);margin:12px auto;text-align:center;line-height:1.6;overflow-wrap:anywhere;">
-    <span class="eq" style="display:block">
-      <span class="math" style="display:inline-block;font-size:clamp(1.18rem,0.98rem + 0.9vw,1.85rem);font-weight:400;letter-spacing:0.02px;">
-        <img
-          src="https://latex.codecogs.com/png.image?\dpi{110}\frac{\partial t_i}{\partial x_s}=\frac{x_s-x_i}{vR_i},\quad\frac{\partial t_i}{\partial y_s}=\frac{y_s-y_i}{vR_i},\quad\frac{\partial t_i}{\partial z_s}=\frac{z_s-z_i}{vR_i},\quad\frac{\partial t_i}{\partial t_0}=1,\quad\frac{\partial t_i}{\partial v}=-\frac{R_i}{v^2}"
-          alt="Jacobian"
-        />
-      </span>
-    </span>
-  </div>
-  <div>
-    <!-- <p><b>Symbols (for this equation):</b></p> -->
-    <ul style="margin:0;padding-left:18px;">
-      <li>Each fraction is a partial derivative showing how the predicted time at station i changes if we nudge one parameter.</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}R_i" alt="Ri" /> — source–station distance [km]; closer stations (smaller <img src="https://latex.codecogs.com/png.image?\dpi{110}R_i" alt="Ri" />) are more sensitive.</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}G" alt="G" /> — the Jacobian matrix collecting these derivatives for all stations.</li>
-    </ul>
-  </div>
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  <img
+                    src="https://latex.codecogs.com/png.image?\dpi{110}r_i(\mathbf{m})=t_i^{\mathrm{obs}}-g_i(\mathbf{m}),\qquad\mathrm{RMS}(\mathbf{m})=\sqrt{\frac{1}{N}\sum_{i=1}^{N}r_i^2}"
+                    alt="residual and RMS"
+                  />
+                </span>
+              </span>
+            </div>
 
-  <!-- Whitening -->
-  <p style="margin-top:14px;"><b>Whitening (by noise)</b><p style="margin:4px 0 8px;"> Scale data by their uncertainty so precise stations count more and noisy ones count less—like measuring everything in its own “noise units”.</p></p>
-  <div style="display:block;max-width:min(760px,92vw);margin:12px auto;text-align:center;line-height:1.6;overflow-wrap:anywhere;">
-    <span class="eq" style="display:block">
-      <span class="math" style="display:inline-block;font-size:clamp(1.18rem,0.98rem + 0.9vw,1.85rem);font-weight:400;letter-spacing:0.02px;">
-        <img
-          src="https://latex.codecogs.com/png.image?\dpi{110}W=\Sigma^{-1/2},\qquad G_w=WG,\qquad\mathbf{d}_w=W\mathbf{r}"
-          alt="whitening"
-        />
-      </span>
-    </span>
-  </div>
-  <div>
-    <!-- <p><b>Symbols (for this equation):</b></p> -->
-    <ul style="margin:0;padding-left:18px;">
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\Sigma=\mathrm{diag}(\sigma_1^2,\dots,\sigma_N^2)" alt="Sigma" /> — noise covariance (diagonal) from per-station spreads.</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}W=\Sigma^{-1/2}" alt="W" /> — whitening matrix (divide by noise stds).</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}G_w" alt="Gw" /> — whitened Jacobian; <img src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{d}_w" alt="dw" /> — whitened residuals.</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\sigma_i" alt="sigma_i" /> — standard deviation of pick noise at station i [s].</li>
-    </ul>
-  </div>
+            <ul style="margin: 0; padding-left: 18px">
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}r_i(\mathbf{m})"
+                  alt="ri"
+                />
+                — residual at station i (observed − predicted) [s].
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}t_i^{\mathrm{obs}}"
+                  alt="tiobs"
+                />
+                — observed pick time at station i [s].
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}g_i(\mathbf{m})"
+                  alt="g_i"
+                />
+                — predicted arrival time at station i [s].
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\mathrm{RMS}(\mathbf{m})"
+                  alt="RMS"
+                />
+                — root-mean-square misfit over all stations [s].
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}N"
+                  alt="N"
+                />
+                — number of stations.
+              </li>
+            </ul>
 
-  <!-- Tikhonov-damped normal equations -->
-  <p style="margin-top:14px;"><b>Tikhonov-damped normal equations</b><p style="margin:4px 0 8px;"> Solve for a safe update that balances fitting data and keeping steps stable; the damping value λ controls the safety vs. bias trade-off.</p></p>
-  <div style="display:block;max-width:min(760px,92vw);margin:12px auto;text-align:center;line-height:1.6;overflow-wrap:anywhere;">
-    <span class="eq" style="display:block">
-      <span class="math" style="display:inline-block;font-size:clamp(1.22rem,1rem + 1vw,1.95rem);font-weight:400;letter-spacing:0.02px;">
-        <img
-          src="https://latex.codecogs.com/png.image?\dpi{110}(G_w^{\top}G_w+\lambda^2 I)\,\Delta\mathbf{m}=G_w^{\top}\mathbf{d}_w,\qquad\mathbf{m}^{(k+1)}=\mathbf{m}^{(k)}+\Delta\mathbf{m}"
-          alt="Tikhonov normal equations"
-        />
-      </span>
-    </span>
-  </div>
-  <div>
-    <!-- <p><b>Symbols (for this equation):</b></p> -->
-    <ul style="margin:0;padding-left:18px;">
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\Delta\mathbf{m}" alt="Delta m" /> — model update; moves the estimate.</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\lambda" alt="lambda" /> — damping (regularization) strength; larger values stabilize but add bias.</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}I" alt="I" /> — identity matrix.</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}^{(k)}" alt="m^k" /> and <img src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}^{(k+1)}" alt="m^(k+1)" /> — model before/after the step.</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}G_w^{\top}" alt="GwT" /> — transpose of the whitened Jacobian.</li>
-    </ul>
-  </div>
+            <p style="margin-top: 14px"><b>Linearization (Jacobian)</b></p>
+            <p style="margin: 4px 0 8px">
+              Approximate the nonlinear model by a straight line near the
+              current guess.
+            </p>
 
-  <ul style="margin-top:12px;">
-    <li><b>Choosing <img src="https://latex.codecogs.com/png.image?\dpi{110}\lambda" alt="lambda" />:</b> increase if updates oscillate/blow up; decrease if progress is too slow.</li>
-    <li><b>Stopping:</b> stop when <img src="https://latex.codecogs.com/png.image?\dpi{110}\|\Delta\mathbf{m}\|" alt="norm Delta m" /> is tiny or RMS stops improving.</li>
-  </ul>
-</div>
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.18rem, 0.98rem + 0.9vw, 1.85rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  <img
+                    src="https://latex.codecogs.com/png.image?\dpi{110}\frac{\partial t_i}{\partial x_s}=\frac{x_s-x_i}{vR_i},\quad\frac{\partial t_i}{\partial y_s}=\frac{y_s-y_i}{vR_i},\quad\frac{\partial t_i}{\partial z_s}=\frac{z_s-z_i}{vR_i},\quad\frac{\partial t_i}{\partial t_0}=1,\quad\frac{\partial t_i}{\partial v}=-\frac{R_i}{v^2}"
+                    alt="Jacobian"
+                  />
+                </span>
+              </span>
+            </div>
 
+            <ul style="margin: 0; padding-left: 18px">
+              <li>
+                Each fraction is a partial derivative showing how the predicted
+                time at station i changes if we nudge one parameter.
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}R_i"
+                  alt="Ri"
+                />
+                — source–station distance [km]; closer stations (smaller
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}R_i"
+                  alt="Ri"
+                />) are more sensitive.
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}G"
+                  alt="G"
+                />
+                — the Jacobian matrix collecting these derivatives for all
+                stations.
+              </li>
+            </ul>
+
+            <p style="margin-top: 14px"><b>Whitening (by noise)</b></p>
+            <p style="margin: 4px 0 8px">
+              Scale data by their uncertainty so precise stations count more and
+              noisy ones count less—like measuring everything in its own “noise
+              units”.
+            </p>
+
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.18rem, 0.98rem + 0.9vw, 1.85rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  <img
+                    src="https://latex.codecogs.com/png.image?\dpi{110}W=\Sigma^{-1/2},\qquad G_w=WG,\qquad\mathbf{d}_w=W\mathbf{r}"
+                    alt="whitening"
+                  />
+                </span>
+              </span>
+            </div>
+
+            <ul style="margin: 0; padding-left: 18px">
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\Sigma=\mathrm{diag}(\sigma_1^2,\dots,\sigma_N^2)"
+                  alt="Sigma"
+                />
+                — noise covariance (diagonal) from per-station spreads.
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}W=\Sigma^{-1/2}"
+                  alt="W"
+                />
+                — whitening matrix (divide by noise stds).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}G_w"
+                  alt="Gw"
+                />
+                — whitened Jacobian;
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{d}_w"
+                  alt="dw"
+                />
+                — whitened residuals.
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\sigma_i"
+                  alt="sigma_i"
+                />
+                — standard deviation of pick noise at station i [s].
+              </li>
+            </ul>
+
+            <p style="margin-top: 14px">
+              <b>Tikhonov-damped normal equations</b>
+            </p>
+            <p style="margin: 4px 0 8px">
+              Solve for a safe update that balances fitting data and keeping
+              steps stable; the damping value λ controls the safety vs. bias
+              trade-off.
+            </p>
+
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  <img
+                    src="https://latex.codecogs.com/png.image?\dpi{110}(G_w^{\top}G_w+\lambda^2 I)\,\Delta\mathbf{m}=G_w^{\top}\mathbf{d}_w,\qquad\mathbf{m}^{(k+1)}=\mathbf{m}^{(k)}+\Delta\mathbf{m}"
+                    alt="Tikhonov normal equations"
+                  />
+                </span>
+              </span>
+            </div>
+
+            <ul style="margin-top: 12px">
+              <li>
+                <b
+                  >Choosing
+                  <img
+                    src="https://latex.codecogs.com/png.image?\dpi{110}\lambda"
+                    alt="lambda"
+                  />:</b
+                >
+                increase if updates oscillate/blow up; decrease if progress is
+                too slow.
+              </li>
+              <li>
+                <b>Stopping:</b> stop when
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\|\Delta\mathbf{m}\|"
+                  alt="norm Delta m"
+                />
+                is tiny or RMS stops improving.
+              </li>
+            </ul>
+          </div>
 
           <!-- 5) MISFIT MAP (2D scan) -->
           <div class="card">
-  <h2>Misfit Map</h2>
-  <p>
-    We visualize how well different surface locations (x, y) at a chosen depth z fit the data using a fixed assumed speed.
-    At each grid point we first pick the best origin time, then compute the average squared mismatch to plot as a heatmap.
-  </p>
+            <h2>Misfit Map</h2>
+            <p>
+              We visualize how well different surface locations (x, y) at a
+              chosen depth z fit the data using a fixed assumed speed. At each
+              grid point we first pick the best origin time, then compute the
+              average squared mismatch to plot as a heatmap.
+            </p>
 
-  <!-- 1) t0* -->
-  <p><b>Best origin time at each grid point</b></p>
-  <p style="margin:4px 0 8px;"> For each map location, choose the origin time that best matches the picks by averaging “observed minus travel-time”.</p>
+            <p><b>Best origin time at each grid point</b></p>
+            <p style="margin: 4px 0 8px">
+              For each map location, choose the origin time that best matches
+              the picks by averaging “observed minus travel-time”.
+            </p>
 
-  <div
-    style="display:block;max-width:min(760px,92vw);margin:12px auto;text-align:center;line-height:1.6;overflow-wrap:anywhere;"
-  >
-    <span class="eq" style="display:block">
-      <span
-        class="math"
-        style="display:inline-block;font-size:clamp(1.22rem,1rem + 1vw,1.95rem);font-weight:400;letter-spacing:0.02px;"
-      >
-        <img
-          src="https://latex.codecogs.com/png.image?\dpi{110}t_0^*(x,y;z)=\frac{1}{N}\sum_{i=1}^{N}\!\left(t_i^{\mathrm{obs}}-\frac{R_i(x,y,z)}{v_{\mathrm{start}}}\right)"
-          alt="t0 star"
-        />
-      </span>
-    </span>
-  </div>
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 12px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  <img
+                    src="https://latex.codecogs.com/png.image?\dpi{110}t_0^*(x,y;z)=\frac{1}{N}\sum_{i=1}^{N}\!\left(t_i^{\mathrm{obs}}-\frac{R_i(x,y,z)}{v_{\mathrm{start}}}\right)"
+                    alt="t0 star"
+                  />
+                </span>
+              </span>
+            </div>
 
-  <div>
-    <!-- <p><b>Symbols (for this equation):</b></p> -->
-    <ul style="margin:0;padding-left:18px;">
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}t_0^*" alt="t0*" /> — best origin time chosen at that grid point (seconds).</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}t_i^{\mathrm{obs}}" alt="t_i^obs" /> — observed pick at station i (seconds).</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}R_i(x,y,z)" alt="Ri(x,y,z)" /> — trial distance from grid point to station i (km).</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}v_{\mathrm{start}}" alt="v_start" /> — assumed wave speed used for the scan (km·s<sup>−1</sup>).</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}N" alt="N" /> — number of stations.</li>
-    </ul>
-  </div>
+            <ul style="margin: 0; padding-left: 18px">
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}t_0^*"
+                  alt="t0*"
+                />
+                — best origin time chosen at that grid point (seconds).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}t_i^{\mathrm{obs}}"
+                  alt="t_i^obs"
+                />
+                — observed pick at station i (seconds).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}R_i(x,y,z)"
+                  alt="Ri(x,y,z)"
+                />
+                — trial distance from grid point to station i (km).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}v_{\mathrm{start}}"
+                  alt="v_start"
+                />
+                — assumed wave speed used for the scan (km·s<sup>−1</sup>).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}N"
+                  alt="N"
+                />
+                — number of stations.
+              </li>
+            </ul>
 
-  <!-- 2) J(x,y;z) -->
-  <p style="margin-top:14px;"><b>Mean-squared misfit used for the map</b></p>
-  <p style="margin:4px 0 8px;">With that best origin time, compute the average squared difference between observed and predicted times; lower values mean a better-fitting location.</p>
+            <p style="margin-top: 14px">
+              <b>Mean-squared misfit used for the map</b>
+            </p>
+            <p style="margin: 4px 0 8px">
+              With that best origin time, compute the average squared difference
+              between observed and predicted times; lower values mean a
+              better-fitting location.
+            </p>
 
-  <div
-    style="display:block;max-width:min(760px,92vw);margin:6px auto;text-align:center;line-height:1.6;overflow-wrap:anywhere;"
-  >
-    <span class="eq" style="display:block">
-      <span
-        class="math"
-        style="display:inline-block;font-size:clamp(1.22rem,1rem + 1vw,1.95rem);font-weight:400;letter-spacing:0.02px;"
-      >
-        <img
-          src="https://latex.codecogs.com/png.image?\dpi{110}J(x,y;z)=\frac{1}{N}\sum_{i=1}^{N}\left[t_i^{\mathrm{obs}}-\left(t_0^*(x,y;z)+\frac{R_i(x,y,z)}{v_{\mathrm{start}}}\right)\right]^2=\mathrm{Var}_i\!\left(t_i^{\mathrm{obs}}-\frac{R_i(x,y,z)}{v_{\mathrm{start}}}\right)"
-          alt="J(x,y;z)"
-        />
-      </span>
-    </span>
-  </div>
+            <div
+              style="
+                display: block;
+                max-width: min(760px, 92vw);
+                margin: 6px auto;
+                text-align: center;
+                line-height: 1.6;
+                overflow-wrap: anywhere;
+              "
+            >
+              <span class="eq" style="display: block">
+                <span
+                  class="math"
+                  style="
+                    display: inline-block;
+                    font-size: clamp(1.22rem, 1rem + 1vw, 1.95rem);
+                    font-weight: 400;
+                    letter-spacing: 0.02px;
+                  "
+                >
+                  <img
+                    src="https://latex.codecogs.com/png.image?\dpi{110}J(x,y;z)=\frac{1}{N}\sum_{i=1}^{N}\left[t_i^{\mathrm{obs}}-\left(t_0^*(x,y;z)+\frac{R_i(x,y,z)}{v_{\mathrm{start}}}\right)\right]^2=\mathrm{Var}_i\!\left(t_i^{\mathrm{obs}}-\frac{R_i(x,y,z)}{v_{\mathrm{start}}}\right)"
+                    alt="J(x,y;z)"
+                  />
+                </span>
+              </span>
+            </div>
 
-  <div>
-    <!-- <p><b>Symbols (for this equation):</b></p> -->
-    <ul style="margin:0;padding-left:18px;">
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}J(x,y;z)" alt="J" /> — mean-squared misfit at the grid point (seconds<sup>2</sup>).</li>
-      <li><img src="https://latex.codecogs.com/png.image?\dpi{110}\mathrm{Var}_i(\cdot)" alt="Var_i" /> — sample variance taken over stations i.</li>
-      <li>Other symbols are the same as above: <img src="https://latex.codecogs.com/png.image?\dpi{110}t_0^*" alt="t0*" />, <img src="https://latex.codecogs.com/png.image?\dpi{110}t_i^{\mathrm{obs}}" alt="t_i^obs" />, <img src="https://latex.codecogs.com/png.image?\dpi{110}R_i" alt="Ri" />, <img src="https://latex.codecogs.com/png.image?\dpi{110}v_{\mathrm{start}}" alt="v_start" />.</li>
-    </ul>
-  </div>
+            <ul style="margin: 0; padding-left: 18px">
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}J(x,y;z)"
+                  alt="J"
+                />
+                — mean-squared misfit at the grid point (seconds<sup>2</sup>).
+              </li>
+              <li>
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\mathrm{Var}_i(\cdot)"
+                  alt="Var_i"
+                />
+                — sample variance taken over stations i.
+              </li>
+              <li>
+                Other symbols are the same as above:
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}t_0^*"
+                  alt="t0*"
+                />,
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}t_i^{\mathrm{obs}}"
+                  alt="t_i^obs"
+                />,
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}R_i"
+                  alt="Ri"
+                />,
+                <img
+                  src="https://latex.codecogs.com/png.image?\dpi{110}v_{\mathrm{start}}"
+                  alt="v_start"
+                />.
+              </li>
+            </ul>
 
-  <ul style="margin-top:12px;">
-    <li><b>What it shows:</b> Low <em>J</em> marks candidate epicenters for the chosen depth and assumed speed. In the map, warmer colors mean lower misfit (better).</li>
-    <li><b>Noise floor:</b> If the assumed speed and depth are correct and the data noise has standard deviation σ, the minimum of <em>J</em> should be near σ².</li>
-    <li><b>Bias:</b> If the assumed speed differs from the true speed or the depth is wrong, the low-misfit basin shifts away from the true epicenter.</li>
-    <li><b>Resolution controls:</b> Grid resolution (number of pixels), display depth z, and the assumed speed.</li>
-  </ul>
-</div>
-
-
-          
+            <ul style="margin-top: 12px">
+              <li>
+                <b>What it shows:</b> Low <em>J</em> marks candidate epicenters
+                for the chosen depth and assumed speed. In the map, warmer
+                colors mean lower misfit (better).
+              </li>
+              <li>
+                <b>Noise floor:</b> If the assumed speed and depth are correct
+                and the data noise has standard deviation σ, the minimum of
+                <em>J</em> should be near σ².
+              </li>
+              <li>
+                <b>Bias:</b> If the assumed speed differs from the true speed or
+                the depth is wrong, the low-misfit basin shifts away from the
+                true epicenter.
+              </li>
+              <li>
+                <b>Resolution controls:</b> Grid resolution (number of pixels),
+                display depth z, and the assumed speed.
+              </li>
+            </ul>
+          </div>
         </section>
       </div>
 
@@ -661,23 +1183,35 @@
         </h4>
       </footer>
     </div>
+
+    <!-- Keep original script block -->
+    <script>
+      function theory() {
+        document.getElementById("theory").style.backgroundColor = "#009dff";
+      }
+
+      // Improve AdminLTE mobile drawer behavior: toggle body class for overlay
+      (function () {
+        var toggle = document.getElementById("toggle_nav");
+        if (!toggle) return;
+        toggle.addEventListener("click", function (e) {
+          e.preventDefault();
+          document.body.classList.toggle("sidebar-open");
+        });
+      })();
+    </script>
+
+    <!-- jQuery 2.2.3 -->
+    <script src="../../plugins/jQuery/jquery-2.2.3.min.js"></script>
+    <!-- jQuery UI 1.11.4 -->
+    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
+    <!-- Bootstrap 3.3.6 -->
+    <script src="../../bootstrap/js/bootstrap.min.js"></script>
+    <!-- Slimscroll -->
+    <script src="../../plugins/slimScroll/jquery.slimscroll.min.js"></script>
+    <!-- FastClick -->
+    <script src="../../plugins/fastclick/fastclick.js"></script>
+    <!-- AdminLTE App -->
+    <script src="../../dist/js/app.min.js"></script>
   </body>
 </html>
-<script>
-  function theory() {
-    document.getElementById("theory").style.backgroundColor = "#009dff";
-  }
-</script>
-<!-- ./wrapper -->
-<!-- jQuery 2.2.3 -->
-<script src="../../plugins/jQuery/jquery-2.2.3.min.js"></script>
-<!-- jQuery UI 1.11.4 -->
-<script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
-<!-- Bootstrap 3.3.6 -->
-<script src="../../bootstrap/js/bootstrap.min.js"></script>
-<!-- Slimscroll -->
-<script src="../../plugins/slimScroll/jquery.slimscroll.min.js"></script>
-<!-- FastClick -->
-<script src="../../plugins/fastclick/fastclick.js"></script>
-<!-- AdminLTE App -->
-<script src="../../dist/js/app.min.js"></script>

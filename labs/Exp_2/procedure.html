@@ -17,21 +17,44 @@
     />
     <!-- Theme style -->
     <link href="../../dist/css/AdminLTE.css" rel="stylesheet" />
-    <!-- AdminLTE Skins. Choose a skin from the css/skins folder instead of downloading all of them to reduce the load. -->
+    <!-- AdminLTE Skins -->
     <link href="../../dist/css/skins/_all-skins.min.css" rel="stylesheet" />
     <script>
       window.onload = function () {
         document.getElementById("procedure").className = "active treeview";
       };
     </script>
+
+    <!-- ====== Responsive Enhancements (additive only) ====== -->
     <style>
+      :root {
+        --page-pad: 24px;
+        --text: #1f2937;
+        --headline: #111827;
+        --border: #e5e7eb;
+        --card: #fafafa;
+        --eqbg: #f8fafc;
+        --codebg: #eef2f7;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
       body {
         font-family: Arial, sans-serif;
         line-height: 1.6;
-        margin: 24px;
-        color: #1f2937;
+        margin: var(--page-pad);
+        color: var(--text);
         background: #fff;
       }
+
+      /* Fluid media by default (logos, figures, equations, etc.) */
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
       p,
       li {
         text-align: justify;
@@ -40,25 +63,26 @@
       h2,
       h3 {
         margin: 10px 0 6px;
-        color: #111827;
+        color: var(--headline);
       }
+
       .card {
-        border: 1px solid #e5e7eb;
+        border: 1px solid var(--border);
         border-radius: 12px;
         padding: 14px 16px;
         margin: 12px 0;
-        background: #fafafa;
+        background: var(--card);
       }
       .eq {
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
+        background: var(--eqbg);
+        border: 1px solid var(--border);
         border-radius: 8px;
         padding: 8px 10px;
         overflow: auto;
         margin: 8px 0;
       }
       code {
-        background: #eef2f7;
+        background: var(--codebg);
         padding: 2px 6px;
         border-radius: 6px;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas,
@@ -71,22 +95,131 @@
         color: #0ea5e9;
         font-weight: 600;
       }
+
+      /* Tables: keep your original styles, add mobile scroll behavior */
       table {
         border-collapse: collapse;
         width: 100%;
       }
       th,
       td {
-        border: 1px solid #e5e7eb;
+        border: 1px solid var(--border);
         padding: 8px 10px;
         text-align: left;
       }
       th {
         background: #f3f4f6;
       }
+      .table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
       ul,
       ol {
         margin-left: 18px;
+      }
+
+      /* Navbar brand image scaling (override fixed width inline) */
+      .navbar .navbar-brand img {
+        display: block;
+        height: 50px;
+        width: auto !important; /* override inline width:400px */
+        max-width: 100%;
+        margin-top: -15px;
+      }
+
+      /* Breadcrumbs: allow horizontal scroll on phones */
+      .content-header .breadcrumb {
+        white-space: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* ===== Tablet / Phone ===== */
+      @media (max-width: 991px) {
+        body {
+          margin: 14px;
+        }
+        h1 {
+          font-size: 1.32rem;
+        }
+        h2 {
+          font-size: 1.14rem;
+        }
+        h3 {
+          font-size: 1.04rem;
+        }
+        .card {
+          padding: 12px;
+        }
+
+        /* Make AdminLTE sidebar an overlay drawer */
+        .main-sidebar {
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          left: -240px; /* hidden by default */
+          width: 240px;
+          max-width: 80vw;
+          z-index: 1040;
+          transition: left 0.25s ease;
+        }
+        .sidebar-open .main-sidebar {
+          left: 0;
+        }
+
+        /* Dim background when sidebar is open */
+        .sidebar-open .content-wrapper::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 1039;
+        }
+
+        /* Content spans full width */
+        .content-wrapper,
+        .right-side,
+        .main-footer,
+        .main-header .navbar {
+          margin-left: 0 !important;
+        }
+
+        /* Navbar brand a tad smaller */
+        .navbar .navbar-brand img {
+          height: 40px;
+          margin-top: -10px;
+        }
+      }
+
+      /* ===== Small phones ===== */
+      @media (max-width: 575px) {
+        body {
+          margin: 10px;
+        }
+        .card {
+          padding: 10px;
+        }
+        code {
+          display: inline-block;
+          max-width: 100%;
+          overflow-x: auto;
+        }
+        .content-header .breadcrumb {
+          font-size: 12px;
+        }
+        .logo p {
+          font-size: 0.95em !important;
+        }
+      }
+
+      /* ===== Large screens: keep your original look ===== */
+      @media (min-width: 1200px) {
+        body {
+          margin: var(--page-pad);
+        }
       }
     </style>
   </head>
@@ -106,16 +239,20 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="http://iitb.ac.in"
-            ><span
-              ><img
+          <a class="navbar-brand" href="http://iitb.ac.in">
+            <span>
+              <!-- keep original inline sizes; CSS overrides for responsiveness -->
+              <img
                 src="images/iitrLogo.png"
-                style="margin-top: -15px; height: 50px; width: 400px" /></span
-          ></a>
+                style="margin-top: -15px; height: 50px; width: 400px"
+              />
+            </span>
+          </a>
         </div>
         <div class="collapse navbar-collapse" id="navbar-ex-collapse"></div>
       </div>
     </div>
+
     <div class="wrapper">
       <header class="main-header">
         <!-- Logo -->
@@ -130,7 +267,7 @@
         >
           <p align="center" style="font-size: 1em">Geophysics Lab</p>
         </a>
-        <!-- Header Navbar: style can be found in header.less -->
+        <!-- Header Navbar -->
         <nav class="navbar navbar-static-top" style="background-color: #009dff">
           <!-- Sidebar toggle button-->
           <a
@@ -146,31 +283,24 @@
             <ol class="breadcrumb">
               <li>
                 <a href="../index.html"
-                  ><i class="fa fa-dashboard"></i>Geophysics Lab
-                  <!-- Write lab name here -->
-                </a>
+                  ><i class="fa fa-dashboard"></i>Geophysics Lab</a
+                >
               </li>
-              <li>
-                <a href="#"
-                  >Finding location of an earthquake
-                  <!-- Write experiment name here -->
-                </a>
-              </li>
+              <li><a href="#">Finding location of an earthquake</a></li>
               <li class="active">Procedure</li>
             </ol>
           </section>
         </nav>
       </header>
-      <!-- Left side column. contains the logo and sidebar -->
+
+      <!-- Left side column -->
       <aside class="main-sidebar" style="background-color: #1261a0">
-        <!-- sidebar: style can be found in sidebar.less -->
         <section class="sidebar">
           <!-- search form -->
           <form action="#" class="sidebar-form" method="get">
             <div class="input-group"></div>
           </form>
-          <!-- /.sear ch form -->
-          <!-- sidebar menu: : style can be found in sidebar.less -->
+          <!-- menu -->
           <ul class="sidebar-menu" style="background-color: #1261a0">
             <li class="treeview" id="aim">
               <a href="index.html" id="aim">
@@ -184,22 +314,6 @@
                 <span style="color: white">Theory</span>
               </a>
             </li>
-            <!--   <li class="treeview" id="numerical">
-                    <a href="numerical.php">
-                        <i class="fa fa-laptop"></i>
-                        <span>Numerical</span>
-                        <span class="pull-right-container">
-                        </span>
-                    </a>
-                </li>
-                <li class="treeview" id="program">
-                    <a href="program.php">
-                        <i class="fa fa-laptop"></i>
-                        <span>Program</span>
-                        <span class="pull-right-container">
-                        </span>
-                    </a>
-                </li> -->
             <li class="treeview" id="pretest">
               <a href="pretest.html" id="pretest">
                 <i class="fa fa-files-o" style="color: white"></i>
@@ -235,16 +349,14 @@
             </li>
           </ul>
         </section>
-        <!-- /.sidebar -->
       </aside>
+
       <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
+        <!-- Content Header -->
         <section class="content-header">
-          <h1 align="center">
-            Finding location of an earthquake
-            <!-- Write experiment name here -->
-          </h1>
+          <h1 align="center">Finding location of an earthquake</h1>
         </section>
+
         <!-- Main content -->
         <section class="content">
           <div class="card">
@@ -420,18 +532,41 @@
             </ol>
           </div>
         </section>
-
         <!-- /.content -->
       </div>
+
       <footer class="main-footer">
-        <h4 align="center">
-          Lab contributed by IIT Roorkee
-          <!-- Institute Name -->
-        </h4>
+        <h4 align="center">Lab contributed by IIT Roorkee</h4>
       </footer>
     </div>
+
+    <!-- Tiny helper: close drawer when tapping the dim overlay -->
+    <script>
+      (function () {
+        var toggle = document.getElementById("toggle_nav");
+        if (toggle) {
+          toggle.addEventListener("click", function (e) {
+            e.preventDefault();
+            document.body.classList.toggle("sidebar-open");
+          });
+        }
+        document.addEventListener("click", function (e) {
+          if (document.body.classList.contains("sidebar-open")) {
+            var sidebar = document.querySelector(".main-sidebar");
+            if (
+              sidebar &&
+              !sidebar.contains(e.target) &&
+              !e.target.closest("#toggle_nav")
+            ) {
+              document.body.classList.remove("sidebar-open");
+            }
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
+
 <!-- ./wrapper -->
 <!-- jQuery 2.2.3 -->
 <script src="../../plugins/jQuery/jquery-2.2.3.min.js"></script>

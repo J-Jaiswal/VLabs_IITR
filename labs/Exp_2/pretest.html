@@ -24,7 +24,9 @@
         document.getElementById("pretest").className = "active treeview";
       };
     </script>
+    <!-- === Additive responsive styles (nothing removed) === -->
     <style>
+      /* your originals */
       #toggle_nav:hover {
         background-color: #1261a0;
       }
@@ -40,6 +42,161 @@
       #posttest:hover,
       #references:hover {
         background-color: #009dff;
+      }
+
+      /* enhancements */
+      :root {
+        --page-pad: 24px;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: var(--page-pad);
+        background: #fff;
+      }
+
+      /* fluid images (logo/equations) */
+      img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* navbar logo: override fixed inline width for responsiveness */
+      .navbar .navbar-brand img {
+        display: block;
+        height: 50px;
+        width: auto !important; /* overrides inline width:400px */
+        max-width: 100%;
+        margin-top: -15px;
+      }
+
+      /* breadcrumb: horizontal scroll on small screens */
+      .content-header .breadcrumb {
+        white-space: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* quiz defaults: keep compact on desktop */
+      #quizForm ol {
+        padding-left: 20px;
+      }
+      #quizForm li {
+        margin: 10px 0 14px;
+      }
+      #quizForm label {
+        display: block;
+        line-height: 1.25; /* compact */
+        margin: 2px 0; /* compact gap */
+        cursor: pointer;
+      }
+      #quizForm input[type="radio"] {
+        transform: translateY(1px);
+        margin-right: 6px;
+      }
+
+      /* submit button (your original values kept) */
+      .quiz-submit-btn {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        font-size: 16px;
+        margin-left: 35px;
+        margin-top: 40px;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      }
+      .quiz-submit-btn:hover {
+        background-color: #45a049;
+        transform: scale(1.03);
+      }
+      .quiz-submit-btn:active {
+        transform: scale(0.98);
+        background-color: #3e8e41;
+      }
+
+      /* tablet/phones */
+      @media (max-width: 991px) {
+        body {
+          margin: 14px;
+        }
+
+        /* sidebar as overlay drawer */
+        .main-sidebar {
+          position: fixed;
+          top: 0;
+          bottom: 0;
+          left: -240px; /* hidden by default */
+          width: 240px;
+          max-width: 80vw;
+          z-index: 1040;
+          transition: left 0.25s ease;
+        }
+        .sidebar-open .main-sidebar {
+          left: 0;
+        }
+
+        /* dim page when drawer open */
+        .sidebar-open .content-wrapper::before {
+          content: "";
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.35);
+          z-index: 1039;
+        }
+
+        /* full-width content */
+        .content-wrapper,
+        .right-side,
+        .main-footer,
+        .main-header .navbar {
+          margin-left: 0 !important;
+        }
+
+        /* logo smaller */
+        .navbar .navbar-brand img {
+          height: 40px;
+          margin-top: -10px;
+        }
+
+        /* quiz: better tap targets only on small screens */
+        #quizForm label {
+          line-height: 1.4;
+          margin: 6px 0;
+        }
+
+        /* button: full-width */
+        .quiz-submit-btn {
+          width: 100%;
+          margin-left: 0;
+          margin-top: 20px;
+        }
+      }
+
+      /* small phones */
+      @media (max-width: 575px) {
+        body {
+          margin: 10px;
+        }
+        .content-header .breadcrumb {
+          font-size: 12px;
+        }
+        .logo p {
+          font-size: 0.95em !important;
+        }
+      }
+
+      /* large screens */
+      @media (min-width: 1200px) {
+        body {
+          margin: var(--page-pad);
+        }
       }
     </style>
   </head>
@@ -60,12 +217,14 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="http://iitb.ac.in"
-            ><span
-              ><img
+          <a class="navbar-brand" href="http://iitb.ac.in">
+            <span>
+              <img
                 src="images/iitrLogo.png"
-                style="margin-top: -15px; height: 50px; width: 400px" /></span
-          ></a>
+                style="margin-top: -15px; height: 50px; width: 400px"
+              />
+            </span>
+          </a>
         </div>
         <div class="collapse navbar-collapse" id="navbar-ex-collapse"></div>
       </div>
@@ -86,12 +245,11 @@
           <p align="center" style="font-size: 1em">
             <b
               >Geophysics Lab
-
               <!-- Write your lab name -->
             </b>
           </p>
         </a>
-        <!-- Header Navbar: style can be found in header.less -->
+        <!-- Header Navbar -->
         <nav class="navbar navbar-static-top" style="background-color: #009dff">
           <!-- Sidebar toggle button-->
           <a
@@ -111,8 +269,8 @@
                 >
               </li>
               <li>
-                <a href="#"
-                  >Finding location of an earthquake
+                <a href="#">
+                  Finding location of an earthquake
                   <!-- Write your experiment name -->
                 </a>
               </li>
@@ -124,14 +282,12 @@
 
       <!-- Left side column. contains the logo and sidebar -->
       <aside class="main-sidebar" style="background-color: #1261a0">
-        <!-- sidebar: style can be found in sidebar.less -->
         <section class="sidebar">
           <!-- search form -->
           <form action="#" method="get" class="sidebar-form">
             <div class="input-group"></div>
           </form>
-          <!-- /.sear ch form -->
-          <!-- sidebar menu: : style can be found in sidebar.less -->
+          <!-- sidebar menu -->
           <ul class="sidebar-menu" style="background-color: #1261a0">
             <li class="treeview" id="aim">
               <a href="index.html" id="aim">
@@ -198,17 +354,17 @@
             </li>
           </ul>
         </section>
-        <!-- /.sidebar -->
       </aside>
 
       <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
+        <!-- Content Header -->
         <section class="content-header">
           <h1 align="center">
             Finding location of an earthquake
             <!-- Write experiment name here -->
           </h1>
         </section>
+
         <!-- Main content -->
         <section class="content">
           <!-- <h3>Pre-Test Quiz</h3> -->
@@ -316,6 +472,7 @@
             </ol>
 
             <style>
+              /* keep your original button block; left as-is */
               .quiz-submit-btn {
                 background-color: #4caf50; /* Green */
                 color: white;
@@ -330,12 +487,10 @@
                 transition: background-color 0.3s ease, transform 0.2s ease;
                 box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
               }
-
               .quiz-submit-btn:hover {
                 background-color: #45a049;
                 transform: scale(1.03);
               }
-
               .quiz-submit-btn:active {
                 transform: scale(0.98);
                 background-color: #3e8e41;
@@ -360,7 +515,6 @@
                   q4: "B",
                   q5: "A",
                 };
-
                 let score = 0;
                 let total = Object.keys(correctAnswers).length;
 
@@ -395,6 +549,31 @@
         </h4>
       </footer>
     </div>
+
+    <!-- helper: mobile drawer toggle + click-outside to close -->
+    <script>
+      (function () {
+        var toggle = document.getElementById("toggle_nav");
+        if (toggle) {
+          toggle.addEventListener("click", function (e) {
+            e.preventDefault();
+            document.body.classList.toggle("sidebar-open");
+          });
+        }
+        document.addEventListener("click", function (e) {
+          if (document.body.classList.contains("sidebar-open")) {
+            var sidebar = document.querySelector(".main-sidebar");
+            if (
+              sidebar &&
+              !sidebar.contains(e.target) &&
+              !e.target.closest("#toggle_nav")
+            ) {
+              document.body.classList.remove("sidebar-open");
+            }
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
 
