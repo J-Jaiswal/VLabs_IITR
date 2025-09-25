@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Earthquake Location Simulator — Improved</title>
 
-    <!-- Bootstrap (same as original) -->
+    <!-- Bootstrap -->
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
       crossorigin="anonymous"
     />
 
-    <!-- D3 & Numeric.js (same libs, versions pinned) -->
+    <!-- D3 & numeric.js -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/numeric/1.2.6/numeric.min.js"></script>
 
@@ -24,7 +24,7 @@
         background: #fff;
         border-radius: 12px;
         border: 1px solid #e5e7eb;
-        padding: 16px;
+        padding: 12px;
       }
       .panel h5 {
         margin-bottom: 12px;
@@ -42,6 +42,7 @@
       .ctrl .form-select {
         max-width: 160px;
       }
+
       .legend-swatch {
         width: 14px;
         height: 14px;
@@ -50,43 +51,7 @@
         margin-right: 6px;
         border: 1px solid rgba(0, 0, 0, 0.1);
       }
-      .hint {
-        font-size: 12px;
-        color: #666;
-      }
-      .badge-lite {
-        background: #eef2ff;
-        color: #3730a3;
-      }
-      .map-wrap {
-        position: relative;
-      }
-      .overlay-note {
-        position: absolute;
-        top: 8px;
-        right: 12px;
-        font-size: 12px;
-        background: #ffffffcc;
-        padding: 6px 8px;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
-      }
-      .btn-toggle {
-        border: 1px solid #e5e7eb;
-      }
-      .kpi {
-        font-size: 12px;
-        color: #444;
-      }
-      .kpi strong {
-        font-size: 14px;
-      }
-      /* Colorbar axis */
-      .colorbar-axis text {
-        font-size: 11px;
-      }
 
-      /* ——— Compact edit-mode bar ——— */
       .modebar .btn {
         border-radius: 999px;
         padding: 6px 12px;
@@ -102,8 +67,15 @@
         box-shadow: none;
       }
 
-      .modebar small {
+      .kpi {
         font-size: 12px;
+        color: #444;
+      }
+      .kpi strong {
+        font-size: 14px;
+      }
+      .colorbar-axis text {
+        font-size: 11px;
       }
     </style>
   </head>
@@ -111,23 +83,21 @@
     <div class="container py-4">
       <div class="mb-3">
         <h3 class="mb-1">Earthquake Location Simulator</h3>
-        <!-- <div class="hint">
-          Drag stations, add/remove stations, adjust noise/velocity, and watch
-          the inversion converge with uncertainties.
-        </div> -->
       </div>
 
-      <!-- Controls -->
+      <!-- Inputs -->
       <div class="panel mb-3">
         <h5>Inputs</h5>
         <div class="ctrl">
           <div>
             <label class="small-label">Stations</label>
+            <!-- Clamp in UI -->
             <input
               id="numStations"
               type="number"
               class="form-control"
-              min="0"
+              min="3"
+              max="15"
               step="1"
               value="6"
             />
@@ -148,7 +118,6 @@
             <label class="small-label"
               >True P-wave velocity v<sub>true</sub> (km/s)</label
             >
-            <!-- NEW: slider tied to synthetic data -->
             <input
               id="vTrue"
               type="range"
@@ -168,7 +137,6 @@
             <label class="small-label"
               >Start velocity v<sub>start</sub> (km/s)</label
             >
-            <!-- NEW: separate start velocity for inversion bias demos -->
             <input
               id="vStart"
               type="number"
@@ -179,7 +147,6 @@
           </div>
           <div>
             <label class="small-label">Noise σ (s)</label>
-            <!-- NEW: noise control -->
             <input
               id="sigma"
               type="number"
@@ -191,7 +158,6 @@
           </div>
           <div>
             <label class="small-label">Outlier</label>
-            <!-- NEW: outlier toggle -->
             <select id="outlier" class="form-select">
               <option value="none" selected>None</option>
               <option value="mild">Mild (3σ)</option>
@@ -200,7 +166,6 @@
           </div>
           <div>
             <label class="small-label">Damping λ</label>
-            <!-- NEW: damping for Tikhonov -->
             <input
               id="lambda"
               type="number"
@@ -210,6 +175,20 @@
               min="0"
             />
           </div>
+          <!-- NEW -->
+          <div>
+            <label class="small-label">Max iterations</label>
+            <input
+              id="maxIter"
+              type="number"
+              class="form-control"
+              value="8"
+              min="1"
+              max="50"
+              step="1"
+            />
+          </div>
+
           <div class="d-flex align-items-end gap-2">
             <button id="btnGenerate" class="btn btn-outline-primary">
               Generate stations
@@ -220,58 +199,86 @@
             </button>
           </div>
         </div>
+
         <div class="mt-2 hint">
           <span class="legend-swatch" style="background: #111"></span>Station
           <span class="legend-swatch" style="background: #e11d48"></span>True
           event
           <span class="legend-swatch" style="background: #0ea5e9"></span
           >Estimated event (after inversion)
-          <span class="legend-swatch" style="background: #f59e0b"></span>
-          Uncertainty Ellipse
+          <span class="legend-swatch" style="background: #f59e0b"></span
+          >Uncertainty Ellipse
         </div>
       </div>
 
-      <!-- Graphs -->
-      <div class="row g-3">
-        <div class="col-lg-6">
-          <div class="panel">
-            <h5>Stations, True Event, and Estimatated Event</h5>
-            <div class="map-wrap">
-              <div class="modebar d-flex align-items-center gap-2 mt-2">
-                <div
-                  class="btn-group btn-group-sm"
-                  role="group"
-                  aria-label="Edit mode"
-                >
-                  <button
-                    id="modeAdd"
-                    type="button"
-                    class="btn btn-light active"
-                  >
-                    Add
-                  </button>
-                  <button id="modeMove" type="button" class="btn btn-light">
-                    Move
-                  </button>
-                  <button id="modeRemove" type="button" class="btn btn-light">
-                    Remove
-                  </button>
-                </div>
-                <small class="text-muted ms-2"
-                  >Add: click • Move: drag • Remove: click</small
-                >
-              </div>
+      <!-- Layout -->
+      <!-- === Layout: 70% (Arrivals) | 30% (Map + Misfit stacked) === -->
+      <!-- === Layout: 60% (Arrivals) | 40% (Map + Misfit stacked) === -->
+      <div
+        class="g-3"
+        style="
+          display: grid;
+          grid-template-columns: 60% 40%;
+          grid-template-rows: auto auto;
+          grid-template-areas:
+            'arrivals side'
+            'conv conv';
+          gap: 12px;
+        "
+      >
+        <!-- LEFT: Station Arrivals (60%) -->
+        <div class="panel" style="grid-area: arrivals; margin-bottom: 0">
+          <h5>Station Arrivals</h5>
+          <div
+            id="wavesWrap"
+            style="border: 1px solid #e5e7eb; border-radius: 6px"
+          >
+            <!-- responsive width; your JS controls height per station -->
+            <svg id="waves" style="width: 100%; display: block"></svg>
+          </div>
+        </div>
 
-              <svg id="map" width="540" height="420"></svg>
-              <!-- <div class="overlay-note">
-                Drag stations. Add mode:
-                <button id="toggleAdd" class="btn btn-sm btn-toggle">
-                  OFF
+        <!-- RIGHT: Map (top) + Misfit (bottom) stacked (40%) -->
+        <!-- RIGHT: Map (top) + Misfit (bottom) stacked (reduced height) -->
+        <div
+          style="
+            grid-area: side;
+            display: grid;
+            grid-template-rows: auto auto;
+            gap: 12px;
+          "
+        >
+          <!-- Stations, True Event, Estimated Event -->
+          <div class="panel" style="margin: 0">
+            <div class="modebar d-flex align-items-center gap-2 mt-2">
+              <div
+                class="btn-group btn-group-sm"
+                role="group"
+                aria-label="Edit mode"
+              >
+                <button id="modeAdd" type="button" class="btn btn-light active">
+                  Add
                 </button>
-              </div> -->
+                <button id="modeMove" type="button" class="btn btn-light">
+                  Move
+                </button>
+                <button id="modeRemove" type="button" class="btn btn-light">
+                  Remove
+                </button>
+              </div>
+              <small class="text-muted ms-2"
+                >Add: click • Move: drag • Remove: click</small
+              >
             </div>
 
-            <!-- KPIs (re-enabled so JS can write into them) -->
+            <!-- Reduced height -->
+            <svg
+              id="map"
+              width="460"
+              height="420"
+              style="display: block; margin-inline: auto"
+            ></svg>
+
             <div class="row mt-2 gx-3">
               <div class="col">
                 <div class="kpi">Iterations: <strong id="kIter">—</strong></div>
@@ -279,102 +286,69 @@
                   RMS residual (s): <strong id="kRMS">—</strong>
                 </div>
               </div>
-              <!-- <div class="row mt-1 gx-3">
-                <div class="col">
-                  <div class="kpi">
-                    True (km): <strong id="trueXYZ">x=, y=, z=</strong>
-                  </div>
-                  <div class="kpi">
-                    Estimated (km): <strong id="estXYZ">x=, y=, z=</strong>
-                  </div>
-                </div>
-              </div> -->
             </div>
           </div>
-        </div>
 
-        <div class="col-lg-6">
-          <div class="panel">
+          <!-- Misfit Map (reduced size too) -->
+          <div class="panel" style="margin: 0">
             <h5>Misfit Map</h5>
-            <svg id="misfit" width="540" height="420"></svg>
-            <!-- <div class="hint mt-2">
-              Misfit computed on a grid with t<sub>0</sub> optimized for each
-              gridpoint and v fixed to v<sub>start</sub>.
-            </div> -->
+            <svg
+              id="misfit"
+              width="420"
+              height="420"
+              style="display: block; margin-inline: auto"
+            ></svg>
           </div>
         </div>
 
-        <div class="col-lg-12">
-          <div class="panel" style="margin-bottom: 40px">
-            <h5>Station Arrivals (Seismograms)</h5>
+        <!-- FULL-WIDTH: Convergence -->
+        <div class="panel" style="grid-area: conv; margin-top: 4px">
+          <h5>Convergence</h5>
+          <div
+            style="
+              position: relative;
+              width: 100%;
+              padding-left: 28px;
+              padding-bottom: 22px;
+            "
+          >
+            <svg
+              id="conv"
+              style="width: 100%; height: 220px; display: block"
+            ></svg>
             <div
-              id="wavesWrap"
               style="
-                overflow-y: auto;
-                height: 400px;
-                border: 1px solid #e5e7eb;
-                border-radius: 6px;
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translateY(-50%) rotate(-90deg);
+                transform-origin: left top;
+                font-size: 12px;
+                color: #666;
+                white-space: nowrap;
               "
             >
-              <svg id="waves" width="1000"></svg>
+              Residual / RMS (s)
             </div>
-          </div>
-          <div class="panel">
-            <h5>Convergence</h5>
-
-            <!-- Wrap the SVG so we can place simple axis labels without touching your D3 code -->
             <div
               style="
-                position: relative;
-                width: 1120px;
-                padding-left: 28px;
-                padding-bottom: 22px;
+                position: absolute;
+                left: 50%;
+                bottom: 0;
+                transform: translateX(-50%);
+                font-size: 12px;
+                color: #666;
+                white-space: nowrap;
               "
             >
-              <svg
-                id="conv"
-                width="1120"
-                height="220"
-                style="display: block"
-              ></svg>
-
-              <!-- Y-axis label -->
-              <div
-                style="
-                  position: absolute;
-                  left: 0;
-                  top: 50%;
-                  transform: translateY(-50%) rotate(-90deg);
-                  transform-origin: left top;
-                  font-size: 12px;
-                  color: #666;
-                  white-space: nowrap;
-                "
-              >
-                Residual / RMS (s)
-              </div>
-
-              <!-- X-axis label -->
-              <div
-                style="
-                  position: absolute;
-                  left: 50%;
-                  bottom: 0;
-                  transform: translateX(-50%);
-                  font-size: 12px;
-                  color: #666;
-                  white-space: nowrap;
-                "
-              >
-                Iterations
-              </div>
+              Iterations
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <script src="index_eXP2.js"></script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> -->
+    <!-- Script -->
+    <script src="index_exp2.js"></script>
   </body>
 </html>

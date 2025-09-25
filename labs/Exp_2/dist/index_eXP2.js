@@ -14,7 +14,6 @@
  */
 
 (function () {
-  // -----------------------------
   // Debug / logging helpers
   // -----------------------------
   const DBG = {
@@ -54,13 +53,14 @@
   let vStart = 4.0; // km/s (misfit grid + start)
   let sigma = 1.5; //  Gaussian noise std
   let lambda = 0.1; // Tikhonov damping
-  const maxIter = 8;
+  let maxIter = 8;
   const XY = { min: -60, max: 60 }; // map/misfit extent
   let injectedOutlierIndex = null; // which station got the ±kσ hit
   let highlightIdx = new Set(); // indices to highlight (amber)
   let ellipseParams = null; // { cx, cy, rx, ry, thetaDeg }
+  const ST_MIN = 3;
+  const ST_MAX = 15;
 
-  // ── Map edit mode ─────────────────────────────────────────────
   let toolMode = "add";
   const modeCursor = { add: "copy", move: "grab", remove: "not-allowed" };
 
@@ -70,7 +70,24 @@
     trueEvt: "#e11d48",
     estEvt: "#0ea5e9",
   };
+  const WAVES_FIXED_INNER_H = 700;
 
+  function clampStationsCount(n) {
+    n = +n;
+    if (!Number.isFinite(n)) n = ST_MIN;
+    return Math.max(ST_MIN, Math.min(ST_MAX, n));
+  }
+
+  // [ST_MIN, ST_MAX]
+  function normalizeStationsArray() {
+    let n = stations.length;
+    if (n > ST_MAX) {
+      stations = stations.slice(0, ST_MAX);
+    } else if (n < ST_MIN) {
+      stations = stations.concat(randomStations(ST_MIN - n));
+    }
+    if (el.numStations) el.numStations.value = stations.length;
+  }
   // SVGs
   const mapSel = d3.select("#map");
   const misfitSel = d3.select("#misfit");
@@ -90,7 +107,7 @@
     vStart: document.getElementById("vStart"),
     sigma: document.getElementById("sigma"),
     lambda: document.getElementById("lambda"),
-    outlier: document.getElementById("outlier"), // None/Mild/Strong
+    outlier: document.getElementById("outlier"),
     btnGenerate: document.getElementById("btnGenerate"),
     btnRun: document.getElementById("btnRun"),
     btnReset: document.getElementById("btnReset"),
@@ -102,6 +119,7 @@
     modeRemove: document.getElementById("modeRemove"),
     trueXYZ: document.getElementById("trueXYZ"),
     estXYZ: document.getElementById("estXYZ"),
+    maxIter: document.getElementById("maxIter"),
   };
 
   el.vTrue?.addEventListener("input", () => {
@@ -131,17 +149,25 @@
   }
 
   function addStationAt(xkm, ykm) {
+    if (stations.length >= ST_MAX) {
+      L.log(`[Stations] Not adding: already at max (${ST_MAX}).`);
+      return;
+    }
     stations.push({ x: xkm, y: ykm, z: 0, _isOutlier: false });
-    if (el.numStations) el.numStations.value = stations.length;
+    normalizeStationsArray();
     L.log(`[Stations] Added at (x=${xkm.toFixed(2)}, y=${ykm.toFixed(2)})`);
     drawMap(null);
   }
 
   function removeStationAtIndex(i) {
+    if (stations.length <= ST_MIN) {
+      L.log(`[Stations] Not removing: already at min (${ST_MIN}).`);
+      return;
+    }
     if (i < 0 || i >= stations.length) return;
     const removed = stations[i];
     stations.splice(i, 1);
-    if (el.numStations) el.numStations.value = stations.length;
+    normalizeStationsArray();
     L.log(
       `[Stations] Removed index ${i} @ (x=${removed.x.toFixed(
         2
@@ -503,7 +529,7 @@
   function drawWaveforms(tObs) {
     if (!wavesSel.node()) return;
 
-    // --- compute CLEAN arrivals (no noise, no outlier) ---
+    // Arrival times used to place spikes (seconds)
     const tClean = stations.map((s) =>
       travelTime(s.x, s.y, s.z, eventTrue.x, eventTrue.y, eventTrue.z, 0, vTrue)
     );
@@ -511,37 +537,67 @@
     const svg = wavesSel;
     svg.selectAll("*").remove();
 
-    const tmin = d3.min(tClean) - 0.8;
-    const tmax = d3.max(tClean) + 0.8;
-    const pad = { l: 70, r: 30, t: 24, b: 40 };
-    const W = +svg.attr("width") || 1000;
-    const rowHeight = 120; // vertical spacing per station
-    const H = pad.t + pad.b + rowHeight * tClean.length;
-    svg.attr("height", H);
+    // --- spike style (same as yours) ---
+    const halfWidthSec = 0.15; // half-width of the zig
+    const tailSec = 0.5; // right tail after zig
+    const aspect = 2.0; // height = aspect × width
 
+    // --- FIXED time window in seconds (constant length) ---
+    const tmin = 0;
+    const tmax = 20;
+
+    // --- fixed drawing area (no scrollbar) ---
+    const pad = { l: 70, r: 30, t: 24, b: 40 };
+    // Prefer actual rendered width if available, else attribute width or fallback
+    const W = wavesSel.node().clientWidth || +svg.attr("width") || 1000;
+    const innerH = WAVES_FIXED_INNER_H;
+    const H = pad.t + innerH + pad.b;
+    svg.attr("height", H).attr("width", W);
+
+    // x-scale permanently tied to [0,20]
     const x = d3
       .scaleLinear()
       .domain([tmin, tmax])
-      .range([pad.l, W - pad.r]);
+      .range([pad.l, W - pad.r - 2]); // keep 2px off right edge
+
+    const N = Math.max(1, stations.length);
     const yBand = d3
       .scaleBand()
-      .domain(d3.range(tClean.length))
-      .range([pad.t, H - pad.b])
+      .domain(d3.range(N))
+      .range([pad.t, pad.t + innerH])
       .paddingInner(0.25);
 
-    svg
+    // Axes — force ticks at 0..20 every 2s (including 20)
+    const tickVals = d3.range(0, 21, 2);
+    const gx = svg
       .append("g")
       .attr("transform", `translate(0,${H - pad.b})`)
-      .call(d3.axisBottom(x).ticks(8).tickSizeOuter(0))
-      .call((g) =>
-        g
-          .append("text")
-          .attr("x", W - pad.r)
-          .attr("y", 32)
-          .attr("fill", "#555")
-          .attr("text-anchor", "end")
-          .text("Time (s)")
-      );
+      .call(d3.axisBottom(x).tickValues(tickVals).tickSizeOuter(0));
+
+    // If for any reason the last label gets culled, add a guaranteed "20"
+    if (
+      !gx
+        .selectAll(".tick")
+        .filter((d) => d === 20)
+        .size()
+    ) {
+      gx.append("g")
+        .attr("class", "tick")
+        .attr("transform", `translate(${x(20)},0)`)
+        .append("text")
+        .attr("fill", "currentColor")
+        .attr("y", 9)
+        .attr("dy", "0.71em")
+        .attr("text-anchor", "middle")
+        .text("20");
+    }
+
+    gx.append("text")
+      .attr("x", W - pad.r)
+      .attr("y", 32)
+      .attr("fill", "#555")
+      .attr("text-anchor", "end")
+      .text("Time (s)");
 
     svg
       .append("g")
@@ -549,15 +605,15 @@
       .call(
         d3
           .axisLeft(yBand)
-          .tickFormat((i) => `Sta ${i + 1}`)
+          .tickFormat((i) => `Sta ${+i + 1}`)
           .tickSizeOuter(0)
       );
 
-    // baselines
+    // Baselines
     svg
       .append("g")
       .selectAll("line.row")
-      .data(d3.range(tClean.length))
+      .data(d3.range(N))
       .join("line")
       .attr("x1", x(tmin))
       .attr("x2", x(tmax))
@@ -565,29 +621,37 @@
       .attr("y2", (i) => yBand(i) + yBand.bandwidth() / 2)
       .attr("stroke", "#e5e7eb");
 
-    const halfWidthSec = 0.15; // time half-width of zigzag
-    const tailSec = 0.5; // baseline before/after
-    const aspect = 2.0; // height = aspect × width
-
+    // Waveform path
     const line = d3
       .line()
       .curve(d3.curveLinear)
       .x((d) => x(d.t))
       .y((d) => d.y);
 
+    const clampT = (t) => Math.min(tmax, Math.max(tmin, t));
+
     tClean.forEach((t0, i) => {
       const cy = yBand(i) + yBand.bandwidth() / 2;
-      const zigWidthPx = x(t0 + halfWidthSec) - x(t0 - halfWidthSec);
+
+      // Clamp all segment times to [0,20] for safe rendering at edges
+      const tLeft = clampT(t0 - halfWidthSec);
+      const tRight = clampT(t0 + halfWidthSec);
+      const tTailL = clampT(t0 - tailSec);
+      const tTailR = clampT(t0 + tailSec);
+      const tMark = clampT(t0);
+
+      // Amplitude based on visible zig width (domain is fixed, so stable)
+      const zigWidthPx = Math.max(1, x(tRight) - x(tLeft));
       let A = (aspect * zigWidthPx) / 2;
-      A = Math.min(A, rowHeight * 0.42);
+      A = Math.min(A, yBand.bandwidth() * 0.42);
 
       const pts = [
         { t: tmin, y: cy },
-        { t: t0 - tailSec, y: cy },
-        { t: t0 - halfWidthSec, y: cy - A },
-        { t: t0, y: cy },
-        { t: t0 + halfWidthSec, y: cy + A },
-        { t: t0 + tailSec, y: cy },
+        { t: tTailL, y: cy },
+        { t: tLeft, y: cy - A },
+        { t: tMark, y: cy },
+        { t: tRight, y: cy + A },
+        { t: tTailR, y: cy },
         { t: tmax, y: cy },
       ];
 
@@ -598,47 +662,92 @@
         .attr("stroke", "#374151")
         .attr("stroke-width", 2);
 
+      // Arrival marker
       svg
         .append("line")
-        .attr("x1", x(t0))
-        .attr("x2", x(t0))
+        .attr("x1", x(tMark))
+        .attr("x2", x(tMark))
         .attr("y1", cy - A - 4)
         .attr("y2", cy + A + 4)
         .attr("stroke", "#9ca3af")
         .attr("stroke-width", 1);
     });
+
+    // Debug (optional): confirm axis domain 0..20
+    // console.log("[Waves] x-domain:", x.domain());
   }
 
   function drawMap(est) {
     const svg = mapSel;
     svg.selectAll("*").remove();
-    const { w, h } = getWH(svg),
-      pad = 28;
 
-    const x = d3
-      .scaleLinear()
-      .domain([XY.min, XY.max])
-      .range([pad, w - pad]);
-    const y = d3
-      .scaleLinear()
-      .domain([XY.min, XY.max])
-      .range([h - pad, pad]);
+    const { w, h } = getWH(svg);
 
-    // Axes
-    svg
+    // Proper margins so axis labels are fully visible
+    const pad = { l: 46, r: 12, t: 12, b: 42 };
+
+    // Inner plot size
+    const iw = Math.max(0, w - pad.l - pad.r);
+    const ih = Math.max(0, h - pad.t - pad.b);
+
+    // Scales (no .nice(), exact domain)
+    const x = d3.scaleLinear().domain([XY.min, XY.max]).range([0, iw]);
+    const y = d3.scaleLinear().domain([XY.min, XY.max]).range([ih, 0]);
+
+    // Root groups
+    const g = svg.append("g").attr("transform", `translate(${pad.l},${pad.t})`);
+    const gAxes = svg
       .append("g")
-      .attr("transform", `translate(0,${h - pad})`)
-      .call(d3.axisBottom(x).ticks(7));
-    svg
+      .attr("transform", `translate(${pad.l},${pad.t})`);
+
+    // Background (also used to capture clicks)
+    g.append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", iw)
+      .attr("height", ih)
+      .attr("fill", "white");
+
+    // Gridlines
+    g.append("g")
+      .attr("class", "grid-x")
+      .attr("transform", `translate(0,${ih})`)
+      .call(
+        d3.axisBottom(x).ticks(7).tickSize(-ih).tickFormat("").tickSizeOuter(0)
+      )
+      .selectAll("line")
+      .attr("stroke", "#e5e7eb");
+    g.append("g")
+      .attr("class", "grid-y")
+      .call(
+        d3.axisLeft(y).ticks(7).tickSize(-iw).tickFormat("").tickSizeOuter(0)
+      )
+      .selectAll("line")
+      .attr("stroke", "#e5e7eb");
+
+    // Axes (bigger, darker labels)
+    gAxes
       .append("g")
-      .attr("transform", `translate(${pad},0)`)
-      .call(d3.axisLeft(y).ticks(7));
+      .attr("transform", `translate(0,${ih})`)
+      .call(d3.axisBottom(x).ticks(7).tickSizeOuter(0).tickPadding(6))
+      .call((gx) => {
+        gx.selectAll("text").attr("font-size", 12).attr("fill", "#374151");
+        gx.selectAll("path, line").attr("stroke", "#6b7280");
+      });
+
+    gAxes
+      .append("g")
+      .call(d3.axisLeft(y).ticks(7).tickSizeOuter(0).tickPadding(6))
+      .call((gy) => {
+        gy.selectAll("text").attr("font-size", 12).attr("fill", "#374151");
+        gy.selectAll("path, line").attr("stroke", "#6b7280");
+      });
 
     // Cursor by mode
     svg.style("cursor", modeCursor[toolMode] || "default");
 
     // Stations
-    const gStations = svg.append("g");
+    const gStations = g.append("g");
     const sel = gStations
       .selectAll("path.station")
       .data(
@@ -661,7 +770,7 @@
       sel.on("click", null);
     }
 
-    // Move mode: drag behavior
+    // Move mode: drag behavior (coordinates are in inner (x,y) space)
     const drag = d3
       .drag()
       .on("start", function () {
@@ -686,12 +795,12 @@
       sel.on(".drag", null);
     }
 
+    // Uncertainty ellipse
     if (ellipseParams) {
       const { cx, cy, rx, ry, thetaDeg } = ellipseParams;
       const rxPx = Math.abs(x(cx + rx) - x(cx));
       const ryPx = Math.abs(y(cy + ry) - y(cy));
-      svg
-        .append("g")
+      g.append("g")
         .attr("transform", `translate(${x(cx)},${y(cy)}) rotate(${thetaDeg})`)
         .append("ellipse")
         .attr("cx", 0)
@@ -704,7 +813,7 @@
     }
 
     // Outlier ring(s)
-    const gRing = svg.append("g").attr("pointer-events", "none");
+    const gRing = g.append("g").attr("pointer-events", "none");
     highlightIdx.forEach((i) => {
       const s = stations[i];
       gRing
@@ -718,8 +827,7 @@
     });
 
     // Truth (star)
-    svg
-      .append("path")
+    g.append("path")
       .attr("d", star())
       .attr("transform", `translate(${x(eventTrue.x)},${y(eventTrue.y)})`)
       .attr("fill", C.trueEvt)
@@ -728,8 +836,7 @@
 
     // Estimate (star)
     if (est) {
-      svg
-        .append("path")
+      g.append("path")
         .attr("d", starSmall())
         .attr("transform", `translate(${x(est[0])},${y(est[1])})`)
         .attr("fill", C.estEvt)
@@ -737,12 +844,11 @@
         .attr("stroke-width", 1.2);
     }
 
-    // Background click for Add mode
-    svg.on("click", (event) => {
+    // Background click for Add mode — use inner coords & bounds
+    g.on("click", (event) => {
       if (toolMode !== "add") return;
-      if (event.target.closest("#map") !== svg.node()) return;
-      const [mx, my] = d3.pointer(event, svg.node());
-      if (mx < pad || mx > w - pad || my < pad || my > h - pad) return;
+      const [mx, my] = d3.pointer(event, g.node()); // inner coords
+      if (mx < 0 || mx > iw || my < 0 || my > ih) return;
       const xkm = x.invert(mx);
       const ykm = y.invert(my);
       addStationAt(xkm, ykm);
@@ -754,14 +860,15 @@
     svg.selectAll("*").remove();
     const { w, h } = getWH(svg);
 
+    // Tighter paddings to reduce inner white margins
     const pad = {
-      l: 36,
-      r: 36,
-      t: 18,
-      bAxis: 34,
-      cbBarH: 12,
-      cbGap: 42,
-      cbAxisGap: 8,
+      l: 24, // was 36
+      r: 24, // was 36
+      t: 12, // was 18
+      bAxis: 26, // was 34
+      cbBarH: 10, // was 12
+      cbGap: 30, // was 42
+      cbAxisGap: 6, // was 8
     };
     const plotBottomY =
       h - (pad.bAxis + pad.cbGap + pad.cbBarH + pad.cbAxisGap);
@@ -778,11 +885,11 @@
     svg
       .append("g")
       .attr("transform", `translate(0,${plotBottomY})`)
-      .call(d3.axisBottom(x).ticks(7).tickSizeOuter(0));
+      .call(d3.axisBottom(x).ticks(7).tickSizeOuter(0).tickPadding(4));
     svg
       .append("g")
       .attr("transform", `translate(${pad.l},0)`)
-      .call(d3.axisLeft(y).ticks(7).tickSizeOuter(0));
+      .call(d3.axisLeft(y).ticks(7).tickSizeOuter(0).tickPadding(4));
 
     // Misfit grid (MSE → RMS)
     const { xs, ys, Z, zmin, zmax } = misfitGrid(tObs, vStart, 60);
@@ -976,8 +1083,12 @@
   // App flow
   // -----------------------------
   function validate() {
-    const n = +el.numStations.value;
-    if (!Number.isFinite(n) || n < 4) {
+    let n = +el.numStations.value;
+    if (!Number.isFinite(n)) n = 6;
+    n = Math.max(3, Math.min(15, n));
+    if (el.numStations) el.numStations.value = n;
+    if (n < 4) {
+      // (Your original guard wanted 4+ stations for inversion stability)
       alert("Need at least 4 stations.");
       return false;
     }
@@ -986,7 +1097,9 @@
 
   function generate() {
     L.start("[Flow] Generate random stations");
-    const n = +el.numStations.value || 6;
+    let n = +el.numStations.value || 6;
+    n = Math.max(3, Math.min(15, n));
+    if (el.numStations) el.numStations.value = n;
     stations = randomStations(n);
     highlightIdx.clear();
     injectedOutlierIndex = null;
@@ -1011,6 +1124,12 @@
     vStart = +el.vStart.value;
     sigma = Math.max(0, +el.sigma.value);
     lambda = Math.max(0, +el.lambda.value);
+
+    if (el.numStations)
+      el.numStations.value = clampStationsCount(el.numStations.value);
+    normalizeStationsArray();
+    maxIter = Math.max(1, Math.min(50, +el.maxIter.value || 8));
+
     const k = parseOutlierLevel(); // 0/3/6
 
     L.log("Inputs:", {
