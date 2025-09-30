@@ -25,12 +25,9 @@
       };
     </script>
     <style>
-      #toggle_nav:hover {
-        background-color: #1261a0;
-      }
-      #aim {
-        background-color: #009dff;
-      }
+      /* ---- Your original styles ---- */
+      #toggle_nav:hover { background-color: #1261a0; }
+      #aim { background-color: #009dff; }
       #aim:hover,
       #theory:hover,
       #pretest:hover,
@@ -38,8 +35,73 @@
       #simulation:hover,
       #result:hover,
       #posttest:hover,
-      #references:hover {
-        background-color: #009dff;
+      #references:hover { background-color: #009dff; }
+
+      /* ---- Additive responsive enhancements (nothing removed) ---- */
+      :root{ --page-pad:24px; }
+      html, body { height:100%; }
+      body { margin: var(--page-pad); background:#fff; }
+
+      /* Make all images fluid (logo/equations) */
+      img { max-width:100%; height:auto; }
+
+      /* Navbar brand image: override fixed inline width for responsiveness */
+      .navbar .navbar-brand img{
+        display:block;
+        height:50px;
+        width:auto !important;   /* overrides inline width:400px */
+        max-width:100%;
+        margin-top:-15px;
+      }
+
+      /* Breadcrumbs: allow horizontal scroll on narrow screens */
+      .content-header .breadcrumb{
+        white-space:nowrap;
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+      }
+
+      /* Tablet/phones layout adjustments */
+      @media (max-width: 991px){
+        body{ margin:14px; }
+
+        /* Sidebar as overlay drawer */
+        .main-sidebar{
+          position: fixed;
+          top:0; bottom:0; left:-240px;   /* hidden by default */
+          width:240px; max-width:80vw;
+          z-index:1040;
+          transition:left .25s ease;
+        }
+        .sidebar-open .main-sidebar{ left:0; }
+
+        /* Dim page behind the drawer */
+        .sidebar-open .content-wrapper::before{
+          content:"";
+          position:fixed; inset:0;
+          background:rgba(0,0,0,.35);
+          z-index:1039;
+        }
+
+        /* Content full-width when drawer overlays */
+        .content-wrapper, .right-side, .main-footer, .main-header .navbar{
+          margin-left:0 !important;
+        }
+
+        /* Navbar brand logo a bit smaller */
+        .navbar .navbar-brand img{ height:40px; margin-top:-10px; }
+      }
+
+      /* Small phones */
+      @media (max-width: 575px){
+        body{ margin:10px; }
+        .content-header .breadcrumb{ font-size:12px; }
+        .logo p{ font-size:.95em !important; }
+      }
+
+      /* Large screens: preserve roomy layout */
+      @media (min-width: 1200px){
+        body{ margin: var(--page-pad); }
       }
     </style>
   </head>
@@ -226,6 +288,37 @@
         </h4>
       </footer>
     </div>
+
+    <!-- Helper: robust mobile drawer toggle (handles both togglers) -->
+    <script>
+      (function () {
+        // There are TWO elements with id="toggle_nav" in this page (navbar hamburger & sidebar toggle).
+        // Also include the Bootstrap .navbar-toggle. Attach listeners to all of them safely.
+        var togglers = Array.prototype.slice.call(document.querySelectorAll('#toggle_nav, .sidebar-toggle, .navbar-toggle'));
+        togglers.forEach(function(t){
+          t.addEventListener('click', function(e){
+            // If it's the top navbar Bootstrap button, let it also do its collapse job
+            // but still toggle the AdminLTE sidebar overlay for mobile UX parity.
+            // Prevent duplicate rapid clicks from selecting text
+            e.preventDefault();
+            document.body.classList.toggle('sidebar-open');
+          });
+        });
+
+        // Close drawer when clicking outside it or pressing ESC
+        document.addEventListener('click', function(e){
+          if (!document.body.classList.contains('sidebar-open')) return;
+          var sidebar = document.querySelector('.main-sidebar');
+          var togglerHit = e.target.closest('#toggle_nav, .sidebar-toggle, .navbar-toggle');
+          if (sidebar && !sidebar.contains(e.target) && !togglerHit) {
+            document.body.classList.remove('sidebar-open');
+          }
+        });
+        document.addEventListener('keydown', function(e){
+          if (e.key === 'Escape') document.body.classList.remove('sidebar-open');
+        });
+      })();
+    </script>
   </body>
 </html>
 

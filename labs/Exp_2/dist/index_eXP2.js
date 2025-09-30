@@ -1,25 +1,18 @@
 /* Earthquake Location — Tikhonov (with detailed console logging)
  * --------------------------------------------------------------
- * - Inverts [x, y, z, t0, v]
- * - Stations: triangles; True/Estimated event: star
- * - One synthetic outlier (Mild=3σ, Strong=6σ) and highlight EXACTLY that station
- * - Draws map (truth+estimate), misfit heatmap, RMS vs iteration, simple waveforms
- * - Deps: D3 v7, numeric.js
- *
- * Debug controls:
- *   DBG.verbose              → high level step-by-step logging (true/false)
- *   DBG.logMatrices          → log Jacobians / normal matrices each iteration
- *   DBG.logEveryGridCell     → log misfit per grid cell (⚠️ very heavy)
- *   DBG.gridSamples          → sample cells per row to log when not logging all
+ * Adds:
+ *  - Max-stations warning alert
+ *  - λ = 0 safe solve (SVD pseudoinverse fallback)
+ *  - Plot per-iteration model points on map (numbered)
+ *  - UI tables for stations/arrivals and per-iteration model parameters
  */
 
 (function () {
   // Debug / logging helpers
-  // -----------------------------
   const DBG = {
     verbose: true,
     logMatrices: true,
-    logEveryGridCell: false, // WARNING: 60x60 grid = 3600 logs per run
+    logEveryGridCell: false,
     gridSamples: 4,
   };
 
@@ -49,45 +42,35 @@
   // -----------------------------
   let stations = []; // [{x,y,z,_isOutlier?}]
   let eventTrue = { x: 10, y: 5, z: 8 };
-  let vTrue = 5.0; // km/s (true)
-  let vStart = 4.0; // km/s (misfit grid + start)
-  let sigma = 1.5; //  Gaussian noise std
-  let lambda = 0.1; // Tikhonov damping
+  let vTrue = 5.0;
+  let vStart = 5.0;
+  let sigma = 1.5;
+  let lambda = 0.1;
   let maxIter = 8;
-  const XY = { min: -60, max: 60 }; // map/misfit extent
-  let injectedOutlierIndex = null; // which station got the ±kσ hit
-  let highlightIdx = new Set(); // indices to highlight (amber)
-  let ellipseParams = null; // { cx, cy, rx, ry, thetaDeg }
+  const XY = { min: -60, max: 60 };
+  let injectedOutlierIndex = null;
+  let highlightIdx = new Set();
+  let ellipseParams = null;
+  let modelTrail = []; // [{x,y,z,t0,v}] per iteration
   const ST_MIN = 3;
   const ST_MAX = 15;
+
+  // λ helper: if user enters 0, use a tiny effective λ² so matrices don’t go singular
+  // const LAM_TINY = 1e-8;
+  // const lam2 = (lam) => (lam > 0 ? lam * lam : LAM_TINY);
 
   let toolMode = "add";
   const modeCursor = { add: "copy", move: "grab", remove: "not-allowed" };
 
   const C = {
     station: "#111111",
-    outlier: "#f59e0b", // amber
+    outlier: "#f59e0b",
     trueEvt: "#e11d48",
     estEvt: "#0ea5e9",
+    trail: "#0ea5e9",
   };
   const WAVES_FIXED_INNER_H = 700;
 
-  function clampStationsCount(n) {
-    n = +n;
-    if (!Number.isFinite(n)) n = ST_MIN;
-    return Math.max(ST_MIN, Math.min(ST_MAX, n));
-  }
-
-  // [ST_MIN, ST_MAX]
-  function normalizeStationsArray() {
-    let n = stations.length;
-    if (n > ST_MAX) {
-      stations = stations.slice(0, ST_MAX);
-    } else if (n < ST_MIN) {
-      stations = stations.concat(randomStations(ST_MIN - n));
-    }
-    if (el.numStations) el.numStations.value = stations.length;
-  }
   // SVGs
   const mapSel = d3.select("#map");
   const misfitSel = d3.select("#misfit");
@@ -95,7 +78,7 @@
   const wavesSel = d3.select("#waves");
 
   // -----------------------------
-  // UI handles (ids from HTML)
+  // UI handles
   // -----------------------------
   const el = {
     numStations: document.getElementById("numStations"),
@@ -120,6 +103,9 @@
     trueXYZ: document.getElementById("trueXYZ"),
     estXYZ: document.getElementById("estXYZ"),
     maxIter: document.getElementById("maxIter"),
+    alertBox: document.getElementById("alertBox"),
+    tblStationsBody: document.getElementById("tblStationsBody"),
+    tblModelBody: document.getElementById("tblModelBody"),
   };
 
   el.vTrue?.addEventListener("input", () => {
@@ -130,50 +116,39 @@
   // Utilities
   // -----------------------------
   const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const fx = (n, k = 2) => Number(n).toFixed(k);
 
-  function clamp(v, a, b) {
-    return Math.max(a, Math.min(b, v));
+  function warn(msg) {
+    if (!el.alertBox) return alert(msg);
+    el.alertBox.textContent = msg;
+    el.alertBox.classList.remove("d-none");
+    // auto-hide after 3s
+    window.clearTimeout(warn._t);
+    warn._t = window.setTimeout(() => {
+      el.alertBox.classList.add("d-none");
+      el.alertBox.textContent = "";
+    }, 3000);
   }
 
-  function setMode(m) {
-    L.start(`[UI] Set tool mode → ${m}`);
-    toolMode = m;
-    [el.modeAdd, el.modeMove, el.modeRemove].forEach((btn) =>
-      btn?.classList.remove("active")
-    );
-    if (m === "add") el.modeAdd?.classList.add("active");
-    if (m === "move") el.modeMove?.classList.add("active");
-    if (m === "remove") el.modeRemove?.classList.add("active");
-    drawMap(null);
-    L.end();
+  function clampStationsCount(n) {
+    n = +n;
+    if (!Number.isFinite(n)) n = ST_MIN;
+    const nn = Math.max(ST_MIN, Math.min(ST_MAX, n));
+    if (n > ST_MAX)
+      warn(`Max stations is ${ST_MAX}. Extra stations are ignored.`);
+    return nn;
   }
 
-  function addStationAt(xkm, ykm) {
-    if (stations.length >= ST_MAX) {
-      L.log(`[Stations] Not adding: already at max (${ST_MAX}).`);
-      return;
+  function normalizeStationsArray() {
+    let n = stations.length;
+    if (n > ST_MAX) {
+      stations = stations.slice(0, ST_MAX);
+      warn(`Max stations is ${ST_MAX}. Extra stations were removed.`);
+    } else if (n < ST_MIN) {
+      stations = stations.concat(randomStations(ST_MIN - n));
     }
-    stations.push({ x: xkm, y: ykm, z: 0, _isOutlier: false });
-    normalizeStationsArray();
-    L.log(`[Stations] Added at (x=${xkm.toFixed(2)}, y=${ykm.toFixed(2)})`);
-    drawMap(null);
-  }
-
-  function removeStationAtIndex(i) {
-    if (stations.length <= ST_MIN) {
-      L.log(`[Stations] Not removing: already at min (${ST_MIN}).`);
-      return;
-    }
-    if (i < 0 || i >= stations.length) return;
-    const removed = stations[i];
-    stations.splice(i, 1);
-    normalizeStationsArray();
-    L.log(
-      `[Stations] Removed index ${i} @ (x=${removed.x.toFixed(
-        2
-      )}, y=${removed.y.toFixed(2)})`
-    );
-    drawMap(null);
+    if (el.numStations) el.numStations.value = stations.length;
   }
 
   // --- 2x2 symmetric eigen-decomp (covariance -> axes) ---
@@ -226,6 +201,39 @@
   }
 
   // -----------------------------
+  // Tables
+  // -----------------------------
+  function renderStationsTable(tClean, tObs) {
+    if (!el.tblStationsBody) return;
+    const rows = tObs.map((t, i) => {
+      const out = i === injectedOutlierIndex ? "true" : "false";
+      return `<tr>
+        <td>${i + 1}</td>
+        <td>${fx(tClean[i], 6)}</td>
+        <td>${fx(t, 6)}</td>
+        <td>${out}</td>
+      </tr>`;
+    });
+    el.tblStationsBody.innerHTML = rows.join("");
+  }
+
+  function clearModelTable() {
+    if (el.tblModelBody) el.tblModelBody.innerHTML = "";
+  }
+  function renderModelRow(it, m) {
+    if (!el.tblModelBody) return;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${it + 1}</td>
+      <td>${fx(m[0])}</td>
+      <td>${fx(m[1])}</td>
+      <td>${fx(m[2])}</td>
+      <td>${fx(m[3], 4)}</td>
+      <td>${fx(m[4], 3)}</td>`;
+    el.tblModelBody.appendChild(row);
+  }
+
+  // -----------------------------
   // Observations (noise + optional outlier)
   // -----------------------------
   function makeObservations(evt, vTrue, sigma, k) {
@@ -260,9 +268,9 @@
       stations[i]._isOutlier = true;
       injectedOutlierIndex = i;
       L.log(
-        `  • [Outlier] Station #${i} got ${sign > 0 ? "+" : "-"}${k}σ = ${
-          bump.toFixed ? bump.toFixed(6) : bump
-        } s`
+        `  • [Outlier] Station #${i} got ${
+          sign > 0 ? "+" : "-"
+        }${k}σ = ${bump.toFixed(6)} s`
       );
     }
 
@@ -274,11 +282,16 @@
         outlier: i === injectedOutlierIndex,
       }))
     );
+
+    // UI table update
+    renderStationsTable(tClean, tObs);
+
     L.end();
     return tObs;
   }
 
   // -----------------------------
+  // Safe solver with λ=0 (SVD fallback)
   // Solves: (Gwᵀ Gw + λ² I) Δm = Gwᵀ dw
   // -----------------------------
   function solveNormalEq(Gw, dw, lambda) {
@@ -287,18 +300,42 @@
       L.log("Gw (whitened Jacobian):", Gw);
       L.log("dw (whitened residuals):", dw);
     }
-    const GT = numeric.transpose(Gw); // (P x N)
-    let AtA = numeric.dot(GT, Gw); // (P x P)
+    const GT = numeric.transpose(Gw);
+    let AtA = numeric.dot(GT, Gw);
     const P = AtA.length;
-    for (let i = 0; i < P; i++) AtA[i][i] += lambda * lambda;
-    const Atb = numeric.dot(GT, dw); // (P)
+
+    const tiny = 1e-8; // you can use 1e-9…1e-7; 1e-8 is a good default
+    const lam2 = lambda > 0 ? lambda * lambda : tiny;
+
+    for (let i = 0; i < P; i++) AtA[i][i] += lam2;
+    // for (let i = 0; i < P; i++) AtA[i][i] += lambda * lambda;
+    const Atb = numeric.dot(GT, dw);
 
     if (DBG.logMatrices) {
       L.log("A = (Gw^T Gw + λ² I):", AtA);
       L.log("b = Gw^T dw:", Atb);
     }
 
-    const delta_m = numeric.solve(AtA, Atb);
+    let delta_m;
+    try {
+      // Try normal solve
+      delta_m = numeric.solve(AtA, Atb);
+    } catch (e) {
+      // Fallback: SVD-based pseudo-inverse (handles λ=0 singularities)
+      L.log(
+        "[Solver] numeric.solve failed → using SVD pseudoinverse fallback."
+      );
+      const svd = numeric.svd(AtA);
+      const U = svd.U,
+        S = svd.S,
+        V = svd.V;
+      const tol = 1e-10;
+      const Sinv = numeric.diag(S.map((s) => (Math.abs(s) > tol ? 1 / s : 0)));
+      // A^+ = V * S^+ * U^T
+      const AtA_pinv = numeric.dot(numeric.dot(V, Sinv), numeric.transpose(U));
+      delta_m = numeric.dot(AtA_pinv, Atb);
+    }
+
     if (DBG.logMatrices) {
       L.log("Δm solution:", delta_m);
       L.end();
@@ -307,7 +344,7 @@
   }
 
   // -----------------------------
-  // Inversion for [x, y, z, t0, v]  -> returns { m, hist, ellipse }
+  // Inversion for [x, y, z, t0, v]  -> returns { m, hist, ellipse, trail }
   // -----------------------------
   function Inversion(tObs, start, lambda, sigma) {
     L.start("[Inv] Start Gauss–Newton with Tikhonov");
@@ -316,9 +353,11 @@
 
     const hist = [];
     const sig = Math.max(1e-9, +sigma);
+    modelTrail = [];
+    clearModelTable();
 
     for (let it = 0; it < maxIter; it++) {
-      L.start(`[Iter ${it}] Forward model & residuals`);
+      // Forward & residuals
       const tPred = stations.map((s) =>
         travelTime(s.x, s.y, s.z, m[0], m[1], m[2], m[3], m[4])
       );
@@ -328,18 +367,20 @@
       );
       hist.push(rms);
 
-      L.table(
-        tPred.map((tp, i) => ({
-          station: i,
-          t_pred_s: +tp.toFixed(6),
-          dt_s: +delta[i].toFixed(6),
-        }))
-      );
-      L.log(`RMS = ${rms.toFixed(6)} s`);
-      L.end();
+      if (DBG.verbose) {
+        L.start(`[Iter ${it}]`);
+        L.table(
+          tPred.map((tp, i) => ({
+            station: i,
+            t_pred_s: +tp.toFixed(6),
+            dt_s: +delta[i].toFixed(6),
+          }))
+        );
+        L.log(`RMS = ${rms.toFixed(6)} s`);
+        L.end();
+      }
 
       // Jacobian (N x 5)
-      L.start(`[Iter ${it}] Build Jacobian G (unwhitened)`);
       const G = stations.map((s) => {
         const dx = m[0] - s.x,
           dy = m[1] - s.y,
@@ -348,28 +389,32 @@
         const v = m[4];
         return [dx / (v * R), dy / (v * R), dz / (v * R), 1.0, -R / (v * v)];
       });
-      if (DBG.logMatrices) L.log("G:", G);
-      L.end();
 
       // Whitening
       const w = 1 / sig;
       const Gw = G.map((row) => row.map((e) => e * w));
       const dw = delta.map((d) => d * w);
 
-      // Solve (Gwᵀ Gw + λ² I) Δm = Gwᵀ dw
+      // Solve
       const { delta_m } = solveNormalEq(Gw, dw, lambda);
 
       // Update
       const m_old = m.slice();
       m = numeric.add(m, delta_m);
-
-      L.start(`[Iter ${it}] Update model`);
-      L.log("m_old:", m_old);
-      L.log("Δm:", delta_m);
-      L.log("m_new:", m);
       const stepNorm = numeric.norm2(delta_m);
-      L.log(`||Δm||2 = ${stepNorm.toExponential(6)}`);
-      L.end();
+
+      // Log & store
+      L.log(
+        `[Iter ${it}] m_old:`,
+        m_old,
+        " Δm:",
+        delta_m,
+        " m_new:",
+        m,
+        ` ||Δm||2=${stepNorm.toExponential(6)}`
+      );
+      modelTrail.push({ x: m[0], y: m[1], z: m[2], t0: m[3], v: m[4] });
+      renderModelRow(it, m);
 
       if (stepNorm < 1e-4) {
         L.log(`[Iter ${it}] Converged: small update norm.`);
@@ -424,11 +469,11 @@
 
     L.log("[Inv] Final model (x,y,z,t0,v):", m);
     L.log("[Inv] RMS history:", hist);
-    return { m, hist, ellipse };
+    return { m, hist, ellipse, trail: modelTrail.slice() };
   }
 
   // -----------------------------
-  // Single-station highlighter: ONLY the injected outlier
+  // Highlight only the injected outlier
   // -----------------------------
   function setSingleHighlight(k) {
     highlightIdx.clear();
@@ -461,7 +506,6 @@
       for (let i = 0; i < xs.length; i++) {
         const x = xs[i],
           y = ys[j];
-
         const R_over_v = stations.map(
           (s) =>
             Math.sqrt(
@@ -472,24 +516,15 @@
         const val = d3.mean(
           tObs.map((t, k) => {
             const r = t - (t0star + R_over_v[k]);
-            return r * r; // MSE
+            return r * r;
           })
         );
         row.push(val);
         if (val < zmin) zmin = val;
         if (val > zmax) zmax = val;
-
-        if (DBG.logEveryGridCell) {
-          L.log(
-            `  cell (i=${i}, j=${j}) x=${x.toFixed(2)} y=${y.toFixed(
-              2
-            )} t0*=${t0star.toFixed(6)} MSE=${val.toExponential(6)}`
-          );
-        }
       }
 
       if (!DBG.logEveryGridCell && DBG.gridSamples > 0) {
-        // sample a few cells per row to keep console readable
         const idxs = d3
           .range(row.length)
           .filter((ii) => ii % Math.ceil(row.length / DBG.gridSamples) === 0);
@@ -500,7 +535,6 @@
         }));
         L.log(`  row j=${j}: sample cells`, sample);
       }
-
       Z.push(row);
     }
     L.timeEnd("[Misfit] time");
@@ -520,7 +554,6 @@
     return { w, h };
   }
 
-  // Reusable symbol generators
   const tri = d3.symbol().type(d3.symbolTriangle).size(120);
   const triSmall = d3.symbol().type(d3.symbolTriangle).size(70);
   const star = d3.symbol().type(d3.symbolStar).size(240);
@@ -529,7 +562,6 @@
   function drawWaveforms(tObs) {
     if (!wavesSel.node()) return;
 
-    // Arrival times used to place spikes (seconds)
     const tClean = stations.map((s) =>
       travelTime(s.x, s.y, s.z, eventTrue.x, eventTrue.y, eventTrue.z, 0, vTrue)
     );
@@ -537,28 +569,23 @@
     const svg = wavesSel;
     svg.selectAll("*").remove();
 
-    // --- spike style (same as yours) ---
-    const halfWidthSec = 0.15; // half-width of the zig
-    const tailSec = 0.5; // right tail after zig
-    const aspect = 2.0; // height = aspect × width
+    const halfWidthSec = 0.15;
+    const tailSec = 0.5;
+    const aspect = 2.0;
 
-    // --- FIXED time window in seconds (constant length) ---
-    const tmin = 0;
-    const tmax = 20;
+    const tmin = 0,
+      tmax = 20;
 
-    // --- fixed drawing area (no scrollbar) ---
     const pad = { l: 70, r: 30, t: 24, b: 40 };
-    // Prefer actual rendered width if available, else attribute width or fallback
     const W = wavesSel.node().clientWidth || +svg.attr("width") || 1000;
     const innerH = WAVES_FIXED_INNER_H;
     const H = pad.t + innerH + pad.b;
     svg.attr("height", H).attr("width", W);
 
-    // x-scale permanently tied to [0,20]
     const x = d3
       .scaleLinear()
       .domain([tmin, tmax])
-      .range([pad.l, W - pad.r - 2]); // keep 2px off right edge
+      .range([pad.l, W - pad.r - 2]);
 
     const N = Math.max(1, stations.length);
     const yBand = d3
@@ -567,14 +594,16 @@
       .range([pad.t, pad.t + innerH])
       .paddingInner(0.25);
 
-    // Axes — force ticks at 0..20 every 2s (including 20)
     const tickVals = d3.range(0, 21, 2);
     const gx = svg
       .append("g")
       .attr("transform", `translate(0,${H - pad.b})`)
-      .call(d3.axisBottom(x).tickValues(tickVals).tickSizeOuter(0));
-
-    // If for any reason the last label gets culled, add a guaranteed "20"
+      .call(
+        d3
+          .axisBottom(x)
+          .tickValues((tVals = tickVals))
+          .tickSizeOuter(0)
+      );
     if (
       !gx
         .selectAll(".tick")
@@ -591,7 +620,6 @@
         .attr("text-anchor", "middle")
         .text("20");
     }
-
     gx.append("text")
       .attr("x", W - pad.r)
       .attr("y", 32)
@@ -609,7 +637,6 @@
           .tickSizeOuter(0)
       );
 
-    // Baselines
     svg
       .append("g")
       .selectAll("line.row")
@@ -621,26 +648,22 @@
       .attr("y2", (i) => yBand(i) + yBand.bandwidth() / 2)
       .attr("stroke", "#e5e7eb");
 
-    // Waveform path
     const line = d3
       .line()
       .curve(d3.curveLinear)
       .x((d) => x(d.t))
       .y((d) => d.y);
-
     const clampT = (t) => Math.min(tmax, Math.max(tmin, t));
 
     tClean.forEach((t0, i) => {
       const cy = yBand(i) + yBand.bandwidth() / 2;
 
-      // Clamp all segment times to [0,20] for safe rendering at edges
       const tLeft = clampT(t0 - halfWidthSec);
       const tRight = clampT(t0 + halfWidthSec);
       const tTailL = clampT(t0 - tailSec);
       const tTailR = clampT(t0 + tailSec);
       const tMark = clampT(t0);
 
-      // Amplitude based on visible zig width (domain is fixed, so stable)
       const zigWidthPx = Math.max(1, x(tRight) - x(tLeft));
       let A = (aspect * zigWidthPx) / 2;
       A = Math.min(A, yBand.bandwidth() * 0.42);
@@ -662,7 +685,6 @@
         .attr("stroke", "#374151")
         .attr("stroke-width", 2);
 
-      // Arrival marker
       svg
         .append("line")
         .attr("x1", x(tMark))
@@ -672,35 +694,25 @@
         .attr("stroke", "#9ca3af")
         .attr("stroke-width", 1);
     });
-
-    // Debug (optional): confirm axis domain 0..20
-    // console.log("[Waves] x-domain:", x.domain());
   }
 
-  function drawMap(est) {
+  function drawMap(est, trail = [], startGuess = null) {
     const svg = mapSel;
     svg.selectAll("*").remove();
 
     const { w, h } = getWH(svg);
-
-    // Proper margins so axis labels are fully visible
     const pad = { l: 46, r: 12, t: 12, b: 42 };
-
-    // Inner plot size
     const iw = Math.max(0, w - pad.l - pad.r);
     const ih = Math.max(0, h - pad.t - pad.b);
 
-    // Scales (no .nice(), exact domain)
     const x = d3.scaleLinear().domain([XY.min, XY.max]).range([0, iw]);
     const y = d3.scaleLinear().domain([XY.min, XY.max]).range([ih, 0]);
 
-    // Root groups
     const g = svg.append("g").attr("transform", `translate(${pad.l},${pad.t})`);
     const gAxes = svg
       .append("g")
       .attr("transform", `translate(${pad.l},${pad.t})`);
 
-    // Background (also used to capture clicks)
     g.append("rect")
       .attr("x", 0)
       .attr("y", 0)
@@ -708,7 +720,6 @@
       .attr("height", ih)
       .attr("fill", "white");
 
-    // Gridlines
     g.append("g")
       .attr("class", "grid-x")
       .attr("transform", `translate(0,${ih})`)
@@ -725,7 +736,17 @@
       .selectAll("line")
       .attr("stroke", "#e5e7eb");
 
-    // Axes (bigger, darker labels)
+    // Starting guess
+    if (startGuess) {
+      g.append("circle")
+        .attr("cx", x(startGuess.x))
+        .attr("cy", y(startGuess.y))
+        .attr("r", 3)
+        .attr("fill", "#10b981")
+        .attr("stroke", "#10b981") // green outline
+        .attr("stroke-width", 1);
+      // .attr("stroke-dasharray", "3,2"); // dashed for distinction
+    }
     gAxes
       .append("g")
       .attr("transform", `translate(0,${ih})`)
@@ -734,7 +755,6 @@
         gx.selectAll("text").attr("font-size", 12).attr("fill", "#374151");
         gx.selectAll("path, line").attr("stroke", "#6b7280");
       });
-
     gAxes
       .append("g")
       .call(d3.axisLeft(y).ticks(7).tickSizeOuter(0).tickPadding(6))
@@ -743,7 +763,17 @@
         gy.selectAll("path, line").attr("stroke", "#6b7280");
       });
 
-    // Cursor by mode
+    // if (startGuess) {
+    //   g.append("circle")
+    //     .attr("cx", x(startGuess.x))
+    //     .attr("cy", y(startGuess.y))
+    //     .attr("r", 6)
+    //     .attr("fill", "none")
+    //     .attr("stroke", "#10b981") // green
+    //     .attr("stroke-width", 2)
+    //     .attr("stroke-dasharray", "3,2");
+    // }
+
     svg.style("cursor", modeCursor[toolMode] || "default");
 
     // Stations
@@ -760,7 +790,6 @@
       .attr("transform", (d) => `translate(${x(d.x)},${y(d.y)})`)
       .attr("fill", (d) => (highlightIdx.has(d.i) ? C.outlier : C.station));
 
-    // Remove mode: click a station to delete it
     if (toolMode === "remove") {
       sel.on("click", (ev, d) => {
         ev.stopPropagation();
@@ -770,7 +799,6 @@
       sel.on("click", null);
     }
 
-    // Move mode: drag behavior (coordinates are in inner (x,y) space)
     const drag = d3
       .drag()
       .on("start", function () {
@@ -789,11 +817,8 @@
         svg.style("cursor", modeCursor[toolMode] || "default");
       });
 
-    if (toolMode === "move") {
-      sel.call(drag);
-    } else {
-      sel.on(".drag", null);
-    }
+    if (toolMode === "move") sel.call(drag);
+    else sel.on(".drag", null);
 
     // Uncertainty ellipse
     if (ellipseParams) {
@@ -812,7 +837,7 @@
         .attr("stroke-width", 2);
     }
 
-    // Outlier ring(s)
+    // Outlier rings
     const gRing = g.append("g").attr("pointer-events", "none");
     highlightIdx.forEach((i) => {
       const s = stations[i];
@@ -826,7 +851,7 @@
         .attr("stroke-width", 3);
     });
 
-    // Truth (star)
+    // Truth
     g.append("path")
       .attr("d", star())
       .attr("transform", `translate(${x(eventTrue.x)},${y(eventTrue.y)})`)
@@ -834,7 +859,30 @@
       .attr("stroke", "white")
       .attr("stroke-width", 1.2);
 
-    // Estimate (star)
+    // Iteration trail (small dots with labels 0,1,2,...)
+    if (trail && trail.length) {
+      const gTrail = g.append("g").attr("class", "trail");
+      trail.forEach((mm, i) => {
+        const px = x(mm.x),
+          py = y(mm.y);
+        gTrail
+          .append("circle")
+          .attr("cx", px)
+          .attr("cy", py)
+          .attr("r", 3.5)
+          .attr("fill", C.trail)
+          .attr("stroke", "white")
+          .attr("stroke-width", 1.2);
+        gTrail
+          .append("text")
+          .attr("x", px + 6)
+          .attr("y", py - 6)
+          .attr("class", "iter-dot-label")
+          .text(String(i));
+      });
+    }
+
+    // Estimate (final)
     if (est) {
       g.append("path")
         .attr("d", starSmall())
@@ -844,13 +892,13 @@
         .attr("stroke-width", 1.2);
     }
 
-    // Background click for Add mode — use inner coords & bounds
+    // Add-mode clicks
     g.on("click", (event) => {
       if (toolMode !== "add") return;
-      const [mx, my] = d3.pointer(event, g.node()); // inner coords
+      const [mx, my] = d3.pointer(event, g.node());
       if (mx < 0 || mx > iw || my < 0 || my > ih) return;
-      const xkm = x.invert(mx);
-      const ykm = y.invert(my);
+      const xkm = x.invert(mx),
+        ykm = y.invert(my);
       addStationAt(xkm, ykm);
     });
   }
@@ -860,15 +908,14 @@
     svg.selectAll("*").remove();
     const { w, h } = getWH(svg);
 
-    // Tighter paddings to reduce inner white margins
     const pad = {
-      l: 24, // was 36
-      r: 24, // was 36
-      t: 12, // was 18
-      bAxis: 26, // was 34
-      cbBarH: 10, // was 12
-      cbGap: 30, // was 42
-      cbAxisGap: 6, // was 8
+      l: 24,
+      r: 24,
+      t: 12,
+      bAxis: 26,
+      cbBarH: 10,
+      cbGap: 30,
+      cbAxisGap: 6,
     };
     const plotBottomY =
       h - (pad.bAxis + pad.cbGap + pad.cbBarH + pad.cbAxisGap);
@@ -891,11 +938,10 @@
       .attr("transform", `translate(${pad.l},0)`)
       .call(d3.axisLeft(y).ticks(7).tickSizeOuter(0).tickPadding(4));
 
-    // Misfit grid (MSE → RMS)
-    const { xs, ys, Z, zmin, zmax } = misfitGrid(tObs, vStart, 60);
+    const { xs, ys, Z } = misfitGrid(tObs, vStart, 60);
     const Zr = Z.map((row) => row.map((v) => Math.sqrt(Math.max(0, v))));
-    let rmin = d3.min(Zr.flat());
-    let rmax = d3.max(Zr.flat());
+    let rmin = d3.min(Zr.flat()),
+      rmax = d3.max(Zr.flat());
     L.log(`[Misfit] RMS range: [${rmin.toFixed(6)}, ${rmax.toFixed(6)}]`);
 
     const color = d3
@@ -931,7 +977,6 @@
       .attr("y1", "0%")
       .attr("x2", "100%")
       .attr("y2", "0%");
-
     const nStops = 32;
     d3.range(nStops).forEach((i) => {
       const t = i / (nStops - 1);
@@ -971,11 +1016,10 @@
       .attr("transform", `translate(0, ${axisY})`)
       .call(axisBar);
 
-    const lblY = barY - 6;
     svg
       .append("text")
       .attr("x", barX0)
-      .attr("y", lblY)
+      .attr("y", barY - 6)
       .attr("text-anchor", "start")
       .attr("font-size", 11)
       .attr("fill", "#444")
@@ -983,7 +1027,7 @@
     svg
       .append("text")
       .attr("x", barX1)
-      .attr("y", lblY)
+      .attr("y", barY - 6)
       .attr("text-anchor", "end")
       .attr("font-size", 11)
       .attr("fill", "#444")
@@ -1082,13 +1126,55 @@
   // -----------------------------
   // App flow
   // -----------------------------
+  function setMode(m) {
+    L.start(`[UI] Set tool mode → ${m}`);
+    toolMode = m;
+    [el.modeAdd, el.modeMove, el.modeRemove].forEach((btn) =>
+      btn?.classList.remove("active")
+    );
+    if (m === "add") el.modeAdd?.classList.add("active");
+    if (m === "move") el.modeMove?.classList.add("active");
+    if (m === "remove") el.modeRemove?.classList.add("active");
+    drawMap(null, modelTrail);
+    L.end();
+  }
+
+  function addStationAt(xkm, ykm) {
+    if (stations.length >= ST_MAX) {
+      warn(`Maximum number of stations (${ST_MAX}) reached.`);
+      L.log(`[Stations] Not adding: already at max (${ST_MAX}).`);
+      return;
+    }
+    stations.push({ x: xkm, y: ykm, z: 0, _isOutlier: false });
+    normalizeStationsArray();
+    L.log(`[Stations] Added at (x=${xkm.toFixed(2)}, y=${ykm.toFixed(2)})`);
+    drawMap(null, modelTrail);
+  }
+
+  function removeStationAtIndex(i) {
+    if (stations.length <= ST_MIN) {
+      warn(`Need at least ${ST_MIN} stations.`);
+      L.log(`[Stations] Not removing: already at min (${ST_MIN}).`);
+      return;
+    }
+    if (i < 0 || i >= stations.length) return;
+    const removed = stations[i];
+    stations.splice(i, 1);
+    normalizeStationsArray();
+    L.log(
+      `[Stations] Removed index ${i} @ (x=${removed.x.toFixed(
+        2
+      )}, y=${removed.y.toFixed(2)})`
+    );
+    drawMap(null, modelTrail);
+  }
+
   function validate() {
     let n = +el.numStations.value;
     if (!Number.isFinite(n)) n = 6;
-    n = Math.max(3, Math.min(15, n));
+    n = clampStationsCount(n);
     if (el.numStations) el.numStations.value = n;
     if (n < 4) {
-      // (Your original guard wanted 4+ stations for inversion stability)
       alert("Need at least 4 stations.");
       return false;
     }
@@ -1098,15 +1184,16 @@
   function generate() {
     L.start("[Flow] Generate random stations");
     let n = +el.numStations.value || 6;
-    n = Math.max(3, Math.min(15, n));
+    n = clampStationsCount(n);
     if (el.numStations) el.numStations.value = n;
     stations = randomStations(n);
     highlightIdx.clear();
     injectedOutlierIndex = null;
+    modelTrail = [];
     L.table(
       stations.map((s, i) => ({ i, x: s.x.toFixed(2), y: s.y.toFixed(2) }))
     );
-    drawMap(null);
+    drawMap(null, modelTrail);
     L.end();
   }
 
@@ -1114,7 +1201,6 @@
     if (!validate()) return;
 
     L.start("[Flow] Run experiment");
-    // read UI
     eventTrue = {
       x: +el.xInput.value,
       y: +el.yInput.value,
@@ -1124,13 +1210,12 @@
     vStart = +el.vStart.value;
     sigma = Math.max(0, +el.sigma.value);
     lambda = Math.max(0, +el.lambda.value);
-
     if (el.numStations)
       el.numStations.value = clampStationsCount(el.numStations.value);
     normalizeStationsArray();
     maxIter = Math.max(1, Math.min(50, +el.maxIter.value || 8));
 
-    const k = parseOutlierLevel(); // 0/3/6
+    const k = parseOutlierLevel();
 
     L.log("Inputs:", {
       eventTrue,
@@ -1149,23 +1234,24 @@
     const start = {
       x: d3.mean(stations, (s) => s.x) || 0,
       y: d3.mean(stations, (s) => s.y) || 0,
-      z: 0,
+      z: eventTrue.z,
       t0: 0,
       v: vStart,
     };
     L.log("Start model guess:", start);
 
     // invert
-    const { m, hist, ellipse } = Inversion(tObs, start, lambda, sigma);
+    const { m, hist, ellipse, trail } = Inversion(tObs, start, lambda, sigma);
 
-    // use ellipse
+    // store for drawing
     ellipseParams = ellipse || null;
+    modelTrail = trail || [];
 
     // highlight ONLY injected station
     setSingleHighlight(k);
 
     // draw
-    drawMap(m);
+    drawMap(m, modelTrail, start);
     drawMisfit(tObs);
     drawConvergence(hist);
     drawWaveforms(tObs);
@@ -1173,9 +1259,8 @@
     // KPIs
     el.kIter.textContent = String(hist.length);
     el.kRMS.textContent = (hist.at(-1) ?? NaN).toFixed(3);
-    el.kLambda.textContent = lambda.toFixed(2);
+    el.kLambda && (el.kLambda.textContent = lambda.toFixed(2));
 
-    const fx = (n) => Number(n).toFixed(2);
     if (el.trueXYZ)
       el.trueXYZ.textContent = `x=${fx(eventTrue.x)}, y=${fx(
         eventTrue.y
@@ -1183,7 +1268,6 @@
     if (el.estXYZ)
       el.estXYZ.textContent = `x=${fx(m[0])}, y=${fx(m[1])}, z=${fx(m[2])}`;
 
-    // Final summary dump
     console.log("[RESULT]", {
       stations,
       injectedOutlierIndex,
@@ -1196,6 +1280,7 @@
       vStart,
       eventTrue,
       ellipseParams,
+      modelTrail,
     });
     L.end();
   }
@@ -1203,35 +1288,35 @@
   function reset() {
     L.start("[Flow] Reset");
     stations = [];
-    eventTrue = { x: 10, y: 5, z: 0 };
+    eventTrue = { x: 10, y: 5, z: 8 };
     highlightIdx.clear();
     injectedOutlierIndex = null;
+    modelTrail = [];
     if (el.xInput) el.xInput.value = 10;
     if (el.yInput) el.yInput.value = 5;
-    if (el.zInput) el.zInput.value = 0;
+    if (el.zInput) el.zInput.value = 8;
     if (el.vTrue) {
       el.vTrue.value = 5.0;
       el.vTrueLbl.textContent = "5.0";
     }
-    if (el.vStart) el.vStart.value = 4.0;
+    if (el.vStart) el.vStart.value = 5.0;
     if (el.sigma) el.sigma.value = 1.5;
     if (el.lambda) el.lambda.value = 0.1;
     if (el.numStations) el.numStations.value = 6;
-    if (el.outlier)
-      el.outlier.value = el.outlier.querySelector('option[value="None"]')
-        ? "None"
-        : "none";
+    if (el.outlier) el.outlier.value = "none";
+    el.tblStationsBody && (el.tblStationsBody.innerHTML = "");
+    el.tblModelBody && (el.tblModelBody.innerHTML = "");
 
     mapSel.selectAll("*").remove();
     misfitSel.selectAll("*").remove();
     convSel.selectAll("*").remove();
     el.kIter.textContent = "—";
     el.kRMS.textContent = "—";
-    // el.kLambda.textContent = "—";
     wavesSel.selectAll("*").remove();
     L.end();
   }
 
+  // Events
   el.btnGenerate.addEventListener("click", generate);
   el.btnRun.addEventListener("click", run);
   el.btnReset.addEventListener("click", reset);

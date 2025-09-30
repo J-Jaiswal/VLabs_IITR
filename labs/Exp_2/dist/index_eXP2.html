@@ -42,7 +42,6 @@
       .ctrl .form-select {
         max-width: 160px;
       }
-
       .legend-swatch {
         width: 14px;
         height: 14px;
@@ -51,7 +50,6 @@
         margin-right: 6px;
         border: 1px solid rgba(0, 0, 0, 0.1);
       }
-
       .modebar .btn {
         border-radius: 999px;
         padding: 6px 12px;
@@ -66,7 +64,6 @@
         color: #0b1220;
         box-shadow: none;
       }
-
       .kpi {
         font-size: 12px;
         color: #444;
@@ -77,12 +74,31 @@
       .colorbar-axis text {
         font-size: 11px;
       }
+      .tbl-sm td,
+      .tbl-sm th {
+        padding: 6px 8px;
+        font-size: 12px;
+      }
+      .iter-dot-label {
+        font-size: 10px;
+        fill: #0b1220;
+        paint-order: stroke;
+        stroke: white;
+        stroke-width: 2px;
+        stroke-linejoin: round;
+      }
     </style>
   </head>
   <body>
     <div class="container py-4">
       <div class="mb-3">
         <h3 class="mb-1">Earthquake Location Simulator</h3>
+        <!-- Alert area -->
+        <div
+          id="alertBox"
+          class="alert alert-warning d-none mb-2"
+          role="alert"
+        ></div>
       </div>
 
       <!-- Inputs -->
@@ -91,7 +107,6 @@
         <div class="ctrl">
           <div>
             <label class="small-label">Stations</label>
-            <!-- Clamp in UI -->
             <input
               id="numStations"
               type="number"
@@ -116,7 +131,7 @@
           </div>
           <div>
             <label class="small-label"
-              >True P-wave velocity v<sub>true</sub> (km/s)</label
+              >True velocity v<sub>true</sub> (km/s)</label
             >
             <input
               id="vTrue"
@@ -135,13 +150,13 @@
           </div>
           <div>
             <label class="small-label"
-              >Start velocity v<sub>start</sub> (km/s)</label
+              >Inversion velocity v<sub>start</sub> (km/s)</label
             >
             <input
               id="vStart"
               type="number"
               class="form-control"
-              value="4.0"
+              value="5.0"
               step="0.1"
             />
           </div>
@@ -165,7 +180,7 @@
             </select>
           </div>
           <div>
-            <label class="small-label">Damping λ</label>
+            <label class="small-label">Damping (λ)</label>
             <input
               id="lambda"
               type="number"
@@ -175,7 +190,6 @@
               min="0"
             />
           </div>
-          <!-- NEW -->
           <div>
             <label class="small-label">Max iterations</label>
             <input
@@ -212,17 +226,16 @@
       </div>
 
       <!-- Layout -->
-      <!-- === Layout: 70% (Arrivals) | 30% (Map + Misfit stacked) === -->
-      <!-- === Layout: 60% (Arrivals) | 40% (Map + Misfit stacked) === -->
       <div
         class="g-3"
         style="
           display: grid;
           grid-template-columns: 60% 40%;
-          grid-template-rows: auto auto;
+          grid-template-rows: auto auto auto;
           grid-template-areas:
             'arrivals side'
-            'conv conv';
+            'conv conv'
+            'tables tables';
           gap: 12px;
         "
       >
@@ -233,13 +246,11 @@
             id="wavesWrap"
             style="border: 1px solid #e5e7eb; border-radius: 6px"
           >
-            <!-- responsive width; your JS controls height per station -->
             <svg id="waves" style="width: 100%; display: block"></svg>
           </div>
         </div>
 
-        <!-- RIGHT: Map (top) + Misfit (bottom) stacked (40%) -->
-        <!-- RIGHT: Map (top) + Misfit (bottom) stacked (reduced height) -->
+        <!-- RIGHT: Map + Misfit stacked (40%) -->
         <div
           style="
             grid-area: side;
@@ -248,7 +259,6 @@
             gap: 12px;
           "
         >
-          <!-- Stations, True Event, Estimated Event -->
           <div class="panel" style="margin: 0">
             <div class="modebar d-flex align-items-center gap-2 mt-2">
               <div
@@ -270,15 +280,12 @@
                 >Add: click • Move: drag • Remove: click</small
               >
             </div>
-
-            <!-- Reduced height -->
             <svg
               id="map"
               width="460"
               height="420"
               style="display: block; margin-inline: auto"
             ></svg>
-
             <div class="row mt-2 gx-3">
               <div class="col">
                 <div class="kpi">Iterations: <strong id="kIter">—</strong></div>
@@ -289,7 +296,6 @@
             </div>
           </div>
 
-          <!-- Misfit Map (reduced size too) -->
           <div class="panel" style="margin: 0">
             <h5>Misfit Map</h5>
             <svg
@@ -301,7 +307,7 @@
           </div>
         </div>
 
-        <!-- FULL-WIDTH: Convergence -->
+        <!-- Convergence -->
         <div class="panel" style="grid-area: conv; margin-top: 4px">
           <h5>Convergence</h5>
           <div
@@ -342,6 +348,51 @@
               "
             >
               Iterations
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Tables -->
+        <div class="panel" style="grid-area: tables">
+          <h5>Data Tables</h5>
+          <div class="row g-3">
+            <div class="col-lg-6">
+              <h6 class="mb-2">Stations & Arrivals</h6>
+              <div class="table-responsive">
+                <table
+                  class="table table-striped table-bordered table-sm tbl-sm mb-0"
+                >
+                  <thead class="table-light">
+                    <tr>
+                      <th>Sta</th>
+                      <th>Arrival Times ( synthetic )</th>
+                      <th>Arrival Times + Noise</th>
+                      <th>Outlier</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tblStationsBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <h6 class="mb-2">Model per Iteration</h6>
+              <div class="table-responsive">
+                <table
+                  class="table table-striped table-bordered table-sm tbl-sm mb-0"
+                >
+                  <thead class="table-light">
+                    <tr>
+                      <th>Itr</th>
+                      <th>x</th>
+                      <th>y</th>
+                      <th>z</th>
+                      <th>t0</th>
+                      <th>v</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tblModelBody"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>

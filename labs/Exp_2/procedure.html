@@ -221,6 +221,23 @@
           margin: var(--page-pad);
         }
       }
+
+      /* stop page scroll when drawer is open */
+      body.sidebar-open {
+        overflow: hidden;
+      }
+
+      /* Real backdrop (more reliable than ::before pseudo element) */
+      .drawer-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        z-index: 1039;
+        display: none;
+      }
+      body.sidebar-open .drawer-backdrop {
+        display: block;
+      }
     </style>
   </head>
   <body class="hold-transition skin-blue sidebar-mini">
@@ -270,13 +287,8 @@
         <!-- Header Navbar -->
         <nav class="navbar navbar-static-top" style="background-color: #009dff">
           <!-- Sidebar toggle button-->
-          <a
-            class="sidebar-toggle"
-            data-toggle="offcanvas"
-            href="#"
-            id="toggle_nav"
-            role="button"
-          >
+          <!-- NOTE: removed data-toggle="offcanvas" to stop AdminLTE from hijacking -->
+          <a class="sidebar-toggle" href="#" id="toggle_nav" role="button">
             <span class="sr-only">Toggle navigation</span>
           </a>
           <section class="content-header">
@@ -512,24 +524,6 @@
                 <code>λ</code> or use a better station spread/start velocity.
               </li>
             </ol>
-
-            <h3>4) Tune and repeat</h3>
-            <ol>
-              <li>
-                If the updates look jumpy or the estimate keeps drifting,
-                increase
-                <b><code>λ</code></b> and run again.
-              </li>
-              <li>
-                If the low-error region looks stretched or not centered on the
-                true star, regenerate stations so they surround the source
-                better.
-              </li>
-              <li>
-                Try <code>v<sub>start</sub> ≠ v<sub>true</sub></code> to see how
-                using the wrong velocity shifts (biases) the location.
-              </li>
-            </ol>
           </div>
         </section>
         <!-- /.content -->
@@ -540,18 +534,59 @@
       </footer>
     </div>
 
-    <!-- Tiny helper: close drawer when tapping the dim overlay -->
+    <!-- Tiny helper: robust sidebar toggle (desktop collapse + mobile drawer) -->
     <script>
       (function () {
         var toggle = document.getElementById("toggle_nav");
+        var mql = window.matchMedia("(max-width: 991px)");
+
+        // Create a real clickable backdrop once
+        var backdrop = document.createElement("div");
+        backdrop.className = "drawer-backdrop";
+        document.body.appendChild(backdrop);
+
+        function isMobile() {
+          return mql.matches;
+        }
+
+        // Reconcile classes when crossing the breakpoint (prevents stuck states)
+        function reconcileOnChange() {
+          if (isMobile()) {
+            // entering mobile: remove desktop collapse state
+            document.body.classList.remove("sidebar-collapse");
+          } else {
+            // leaving mobile: close the mobile drawer if it was open
+            document.body.classList.remove("sidebar-open");
+          }
+        }
+        if (mql.addEventListener)
+          mql.addEventListener("change", reconcileOnChange);
+        else if (mql.addListener) mql.addListener(reconcileOnChange); // Safari/older
+
         if (toggle) {
           toggle.addEventListener("click", function (e) {
             e.preventDefault();
-            document.body.classList.toggle("sidebar-open");
+            if (isMobile()) {
+              // slide-in drawer on small screens
+              document.body.classList.toggle("sidebar-open");
+            } else {
+              // AdminLTE desktop collapse behavior
+              document.body.classList.toggle("sidebar-collapse");
+            }
           });
         }
-        document.addEventListener("click", function (e) {
-          if (document.body.classList.contains("sidebar-open")) {
+
+        // Click backdrop to close (mobile)
+        backdrop.addEventListener("click", function () {
+          if (isMobile()) document.body.classList.remove("sidebar-open");
+        });
+
+        // Close when clicking outside sidebar (mobile)
+        document.addEventListener(
+          "click",
+          function (e) {
+            if (!isMobile()) return;
+            if (!document.body.classList.contains("sidebar-open")) return;
             var sidebar = document.querySelector(".main-sidebar");
             if (
               sidebar &&
@@ -560,7 +595,25 @@
             ) {
               document.body.classList.remove("sidebar-open");
             }
+          },
+          true
+        ); // capture phase improves reliability on mobile
+
+        // ESC to close mobile drawer
+        document.addEventListener("keydown", function (e) {
+          if (
+            e.key === "Escape" &&
+            document.body.classList.contains("sidebar-open")
+          ) {
+            document.body.classList.remove("sidebar-open");
           }
+        });
+
+        // Optional: close after clicking a menu link on mobile
+        document.querySelectorAll(".sidebar-menu a").forEach(function (a) {
+          a.addEventListener("click", function () {
+            if (isMobile()) document.body.classList.remove("sidebar-open");
+          });
         });
       })();
     </script>
