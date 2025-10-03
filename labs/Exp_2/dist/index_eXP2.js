@@ -56,8 +56,8 @@
   const ST_MAX = 15;
 
   // λ helper: if user enters 0, use a tiny effective λ² so matrices don’t go singular
-  // const LAM_TINY = 1e-8;
-  // const lam2 = (lam) => (lam > 0 ? lam * lam : LAM_TINY);
+  const LAM_TINY = 0.0001;
+  const effLambda = (lam) => (lam > 0 ? lam * lam : LAM_TINY);
 
   let toolMode = "add";
   const modeCursor = { add: "copy", move: "grab", remove: "not-allowed" };
@@ -303,8 +303,9 @@
     let AtA = numeric.dot(GT, Gw);
     const P = AtA.length;
 
-    const tiny = 1e-8; // you can use 1e-9…1e-7; 1e-8 is a good default
-    const lam2 = lambda > 0 ? lambda * lambda : tiny;
+    // const tiny = 1e-8; // you can use 1e-9…1e-7; 1e-8 is a good default
+    // const lam2 = lambda > 0 ? lambda * lambda : tiny;
+    const lam2 = lambda * lambda;
 
     for (let i = 0; i < P; i++) AtA[i][i] += lam2;
     // for (let i = 0; i < P; i++) AtA[i][i] += lambda * lambda;
@@ -1208,7 +1209,9 @@
     vTrue = +el.vTrue.value;
     vStart = +el.vStart.value;
     sigma = Math.max(0, +el.sigma.value);
-    lambda = Math.max(0, +el.lambda.value);
+    // lambda = Math.max(0, +el.lambda.value);
+    const lambdaRaw = Math.max(0, +el.lambda.value);
+    const lambdaEff = effLambda(lambdaRaw);
     if (el.numStations)
       el.numStations.value = clampStationsCount(el.numStations.value);
     normalizeStationsArray();
@@ -1221,7 +1224,7 @@
       vTrue,
       vStart,
       sigma,
-      lambda,
+      lambda: lambdaEff,
       outlierLevel: k,
       stations: stations.length,
     });
@@ -1229,6 +1232,12 @@
     // forward: observations
     const tObs = makeObservations(eventTrue, vTrue, sigma, k);
 
+    // // Optional: surface a gentle heads-up when the user typed 0
+    // if (lambdaRaw === 0) {
+    //   warn(
+    //     `Damping λ is 0 → using a negligible ${LAM_TINY} to keep the solve stable.`
+    //   );
+    // }
     // start model
     const start = {
       x: d3.mean(stations, (s) => s.x) || 0,
@@ -1240,7 +1249,12 @@
     L.log("Start model guess:", start);
 
     // invert
-    const { m, hist, ellipse, trail } = Inversion(tObs, start, lambda, sigma);
+    const { m, hist, ellipse, trail } = Inversion(
+      tObs,
+      start,
+      lambdaEff,
+      sigma
+    );
 
     // store for drawing
     ellipseParams = ellipse || null;
@@ -1258,7 +1272,11 @@
     // KPIs
     el.kIter.textContent = String(hist.length);
     el.kRMS.textContent = (hist.at(-1) ?? NaN).toFixed(3);
-    el.kLambda && (el.kLambda.textContent = lambda.toFixed(2));
+    // el.kLambda && (el.kLambda.textContent = lambda.toFixed(2));
+    if (el.kLambda) {
+      el.kLambda.textContent =
+        lambdaRaw === 0 ? `0 → ${LAM_TINY}` : lambdaEff.toFixed(2);
+    }
 
     if (el.trueXYZ)
       el.trueXYZ.textContent = `x=${fx(eventTrue.x)}, y=${fx(
