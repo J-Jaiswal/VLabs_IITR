@@ -373,53 +373,45 @@
         <section class="content">
           <div class="card">
             <h2>UI Controls</h2>
-            <ul style="list-style: none; padding-left: 0; margin: 0">
-              <li style="margin: 8px 0">
-                <strong>Stations</strong> — how many receivers to place when you
-                click <b>Generate</b>.
-                <span class="muted"
-                  >Use at least 4. It’s better if stations surround the source
-                  instead of sitting in a line.</span
-                >
+            <ul style="margin: 0 0 0 18px; padding: 0; list-style: disc">
+              <li>
+                <b>Stations:</b> number of receivers to place when you click
+                <b>Generate</b>. Use at least 4, and spread them around the
+                source (not in a straight line).
               </li>
-              <li style="margin: 8px 0">
-                <strong>Event (X, Y, Z)</strong> — the “real” earthquake we use
-                to make fake (synthetic) picks. >
+              <li>
+                <b>Event (X, Y, Z):</b> the “real” earthquake used to generate
+                synthetic picks.
               </li>
-              <li style="margin: 8px 0">
-                <strong><code>v</code><sub>true</sub></strong> — velocity used
-                to create the synthetic data.
+              <li>
+                <b><code>v</code><sub>true</sub>:</b> wave speed used to create
+                the synthetic data.
               </li>
-              <li style="margin: 8px 0">
-                <strong><code>v</code><sub>start</sub></strong> — velocity
-                assumed by the solver and the misfit map.
+              <li>
+                <b><code>v</code><sub>start</sub>:</b> wave speed assumed by the
+                solver and misfit map.
               </li>
-              <li style="margin: 8px 0">
-                <strong><code>σ</code></strong> — noise level on the picks
-                (seconds).
+              <li>
+                <b><code>σ</code> (Noise):</b> level of random error added to
+                the picks (in seconds).
               </li>
-              <li style="margin: 8px 0">
-                <strong>Outlier</strong> — add one bad pick (mild ±3σ or strong
-                ±6σ).
+              <li>
+                <b>Outlier:</b> adds one bad pick (Mild ≈ ±3σ, Strong ≈ ±6σ).
               </li>
-              <li style="margin: 8px 0">
-                <strong><code>λ</code></strong> — Tikhonov damping.
-                <span class="muted"
-                  >Bigger <code>λ</code> makes steps safer/smoother but slower,
-                  and can add small bias.</span
-                >
+              <li>
+                <b><code>λ</code> (Damping):</b> controls stability of updates.
+                Bigger λ = slower but stable; smaller λ = faster but may wobble.
               </li>
-              <li style="margin: 8px 0">
-                <strong>Generate / Run / Reset</strong> — main buttons.
-                <span class="muted"
-                  ><b>Generate</b> places stations, <b>Run</b> solves for
-                  [x,y,z,t<sub>0</sub>,v], <b>Reset</b> clears and loads
-                  defaults.</span
-                >
+              <li>
+                <b>Generate / Run / Reset:</b>
+                <b>Generate</b> places stations and makes synthetic picks,
+                <b>Run</b> solves for [x, y, z, t<sub>0</sub>, v],
+                <b>Reset</b> clears everything and reloads defaults.
               </li>
             </ul>
           </div>
 
+          <!-- 
           <div class="card">
             <h2>Things to test</h2>
             <ol>
@@ -451,79 +443,127 @@
                 shape and slower, less reliable convergence.
               </li>
             </ol>
-          </div>
+          </div> -->
 
           <div class="card">
-            <h2>Step-by-step workflow</h2>
+            <h2>Step-by-Step Workflow</h2>
 
-            <h3>1) Place stations</h3>
-            <ol>
-              <li>
-                Choose <b> Stations</b> and click <b>Generate</b> to place a
-                random network.
-              </li>
-              <li>
-                If needed, click again until stations surround the expected
-                source area (good spread).
-              </li>
-            </ol>
+            <!-- STEP 1 -->
+            <div
+              style="
+                margin-bottom: 20px;
+                padding: 14px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+              "
+            >
+              <h3 style="margin-top: 0">1) Place Stations</h3>
+              <p>
+                Choose <b>Number of Stations</b> and click <b>Generate</b> to
+                place a random network. You can also add, move, or remove
+                stations directly on the map using the toggle options.
+              </p>
+              <p>
+                Try regenerating until the stations surround the expected source
+                area (a good spread).
+              </p>
+            </div>
 
-            <h3>2) Set the “true Event" and the starting guess</h3>
-            <ol>
-              <li>
-                Set the true <b>Event (X, Y, Z)</b>,
+            <!-- STEP 2 -->
+            <div
+              style="
+                margin-bottom: 20px;
+                padding: 14px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+              "
+            >
+              <h3 style="margin-top: 0">
+                2) Set the “True Event” and Starting Guess
+              </h3>
+              <p>
+                Enter the true <b>Event (X, Y, Z)</b>, the velocity
                 <b><code>v</code><sub>true</sub></b
-                >, and noise <b><code>σ</code></b
-                >. You can also add an <b>Outlier</b>.
-              </li>
-              <li>
+                >, and the noise level <b><code>σ</code></b
+                >. You can also enable an <b>Outlier</b>.
+              </p>
+              <p>
                 Set <b><code>v</code><sub>start</sub></b> for the solver and
-                misfit map (start with
-                <code>v<sub>start</sub>=v<sub>true</sub></code
-                >).
-              </li>
-            </ol>
+                misfit map. (Best to start with
+                <code>v<sub>start</sub> = v<sub>true</sub></code
+                >.)
+              </p>
+            </div>
 
-            <h3>3) Run the inversion and read the plots</h3>
-            <ol>
-              <li>
-                Click <b>Run</b>. Each iteration the solver:
-                <ul>
-                  <li>
-                    <b>Predicts</b> arrival times from the current guess
-                    <span class="math">[x_s,y_s,z_s,t_0,v]</span>.
-                  </li>
-                  <li>
-                    <b>Computes residuals</b> (observed − predicted) and updates
-                    RMS.
-                  </li>
-                  <li>
-                    <b>Builds</b> a sensitivity matrix (Jacobian) and takes a
-                    damped Gauss–Newton step.
-                  </li>
-                  <li>
-                    <b>Updates</b> the model until changes are tiny or we hit
-                    the max iterations.
-                  </li>
-                </ul>
-              </li>
-              <li>
-                <em>Map view:</em> triangles = stations (amber ring = outlier
-                station if any); big star = true source; small star = current
-                estimate. Watch the small star move toward the big one.
-              </li>
-              <li>
-                <em>Misfit map:</em> a 2D scan that shows where errors are
-                smallest. Bright area = lower mean-square error. If it’s not
-                over the true star, your <code>v<sub>start</sub></code> is
-                probably off.
-              </li>
-              <li>
-                <em>Convergence:</em> RMS vs iteration should go down and settle
-                near the noise level. If it bounces or rises, increase
-                <code>λ</code> or use a better station spread/start velocity.
-              </li>
-            </ol>
+            <!-- STEP 3 -->
+            <div
+              style="
+                margin-bottom: 20px;
+                padding: 14px;
+                border: 1px solid #ccc;
+                border-radius: 6px;
+              "
+            >
+              <h3 style="margin-top: 0">
+                3) Run the Inversion & Read the Outputs
+              </h3>
+              <p>Click <b>Run</b>. At each iteration the solver:</p>
+              <ul style="margin: 6px 0 12px 20px">
+                <li>
+                  <b>Predicts</b> arrival times from the current guess [x, y, z,
+                  t<sub>0</sub>, v].
+                </li>
+                <li>
+                  <b>Computes</b> residuals (observed – predicted) and updates
+                  RMS.
+                </li>
+                <li>
+                  <b>Builds</b> a sensitivity matrix (Jacobian), whitens by σ,
+                  and takes a damped Gauss–Newton step.
+                </li>
+                <li>
+                  <b>Updates</b> the model until changes are small or maximum
+                  iterations are reached.
+                </li>
+              </ul>
+
+              <!-- OUTPUTS -->
+              <div
+                style="
+                  margin-top: 12px;
+                  padding: 12px;
+                  border: 1px dashed #aaa;
+                  border-radius: 6px;
+                "
+              >
+                <h4 style="margin-top: 0">Outputs to Read</h4>
+                <p>
+                  <b>Arrivals Times Map:</b> shows observed arrival times at
+                  each station as zig-zag impulse.
+                </p>
+                <p>
+                  <b>Stations Map:</b> stations = triangles; true event = big
+                  star; estimate = small star; starting guess = green dot;
+                  iteration updates = blue dots; outlier station = amber ring.
+                  Checkout the ellipse size also ( reduce its size by adjusting
+                  noise and stations geometry)
+                </p>
+                <p>
+                  <b>Misfit Map:</b> heatmap of errors for surface points (true
+                  depth, fixed v<sub>start</sub>). Brighter = better fit. If
+                  shifted, v<sub>start</sub> may be wrong.
+                </p>
+                <p>
+                  <b>Convergence Plot:</b> RMS vs iteration. Should drop and
+                  flatten near noise level. If unstable, increase λ or use
+                  better geometry.
+                </p>
+                <p>
+                  <b>Data Tables:</b> left = station times (clean, noisy,
+                  outlier flag); right = model updates each iteration.
+                </p>
+              </div>
+            </div>
           </div>
         </section>
         <!-- /.content -->

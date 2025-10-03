@@ -2,7 +2,7 @@
  * --------------------------------------------------------------
  * Adds:
  *  - Max-stations warning alert
- *  - λ = 0 safe solve (SVD pseudoinverse fallback)
+ *  - λ = 0 safe solve
  *  - Plot per-iteration model points on map (numbered)
  *  - UI tables for stations/arrivals and per-iteration model parameters
  */
@@ -291,7 +291,6 @@
   }
 
   // -----------------------------
-  // Safe solver with λ=0 (SVD fallback)
   // Solves: (Gwᵀ Gw + λ² I) Δm = Gwᵀ dw
   // -----------------------------
   function solveNormalEq(Gw, dw, lambda) {
@@ -422,7 +421,7 @@
       }
     }
 
-    // Posterior covariance in whitened space
+    // covariance in whitened space
     L.start("[Inv] Posterior covariance & 1-σ ellipse");
     const G = stations.map((s) => {
       const dx = m[0] - s.x,

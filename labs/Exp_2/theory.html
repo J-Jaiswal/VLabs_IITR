@@ -320,7 +320,7 @@
                   ><i class="fa fa-dashboard"></i>Geophysics Lab</a
                 >
               </li>
-              <li><a href="#">Finding location of an earthquake</a></li>
+              <li><a href="#">Finding location of an earthquake by inverse modeling </a></li>
             </ol>
           </section>
         </nav>
@@ -387,7 +387,7 @@
 
       <div class="content-wrapper">
         <section class="content-header">
-          <h1 align="center">Finding location of an earthquake</h1>
+          <h1 align="center">Finding location of an earthquake by inverse modeling</h1>
         </section>
 
         <!-- Main content -->
@@ -399,54 +399,29 @@
             <h2>Overview</h2>
 
             <p>
-              <b>Arrival-Time </b> — Imagine a wave leaving the earthquake and
-              traveling in a straight line at a constant speed. The time a
-              station records is just “when the quake started” plus “how long
-              the wave took to get there,” which depends on how far the station
-              is and how fast the wave travels.
-            </p>
-
-            <p>
-              <b>Synthetic Arrival Times</b> — Real measurements are never
-              perfect. To mimic that, we start from the ideal time, add a small
-              random error (like human picking uncertainty), and sometimes add
-              one big mistake on purpose to see how the method handles bad data.
-            </p>
-
-            <p>
-              <b>Inverse Modeling</b> — We guess the earthquake’s location,
-              depth, start time, and wave speed. Then we compare predicted times
-              with the measured ones, look at the differences, and adjust our
-              guess to make those differences smaller. We also give less weight
-              to noisier stations and take careful, stabilized steps so the
-              solution stays sensible.
-            </p>
-
-            <p>
-              <b>Misfit Map</b> — This is a heatmap showing “how well” each map
-              location explains the data (for a chosen depth and assumed speed).
-              Each pixel tests one location: warmer colors mean a better match.
-              The best area is where the predictions agree most with the
-              observations.
-            </p>
+      This experiment is about finding the earthquake’s location using the arrival
+      times of waves at different stations. We makes “synthetic data”
+      (arrival times with random noise, and sometimes one big error called an
+      outlier) dor each station. Then we use an inversion method to guess the event location,
+      depth, origin time, and speed. At each step the guess is corrected until
+      the misfit (difference) gets smaller. Finally, we also draw a heatmap
+      (misfit map) and an uncertainty ellipse to see how reliable the solution is.
+    </p>
           </div>
 
           <!-- 2) ARRIVAL-TIME CALCULATION (forward physics) -->
           <div class="card">
             <h2>Arrival-Times Calculation (Forward Model)</h2>
 
-            <p>
-              In a constant-speed medium, the first P-wave travels in a straight
-              line from the source to each station. The recorded time at a
-              station equals the earthquake’s start time plus the travel time,
-              which depends on how far the station is from the source and how
-              fast the wave moves.
-            </p>
-            <p>
-              These predicted times form the “forward model.” When they closely
-              match the measured picks, our guessed source location, origin
-              time, and speed are likely correct.
-            </p>
+<p>
+  The wave travels in a straight line at constant speed.  
+  Arrival time at a station = event start time + (distance ÷ speed).  
+</p>
+<p>
+  These are our predicted times (forward model). If they match the observed picks,
+  our guess for location, start time, and speed is good.
+</p>
+
 
             <div
               style="
@@ -577,11 +552,11 @@
               can also inject one deliberately large mistake (an outlier) to see
               how robust the inversion is.
             </p>
-            <p>
+            <!-- <p>
               These simulated “observed” times are what the inversion tries to
               fit. If our model is right and noise is small, the average
               mismatch will be close to the noise level.
-            </p>
+            </p> -->
 
             <div
               style="
@@ -705,6 +680,9 @@
                 — outlier size in “sigma units”.
               </li>
             </ul>
+            <p>
+      The app highlights only the injected outlier station on the plots (if we chose mild/strong outlier).
+    </p>
           </div>
 
           <!-- 4) INVERSE MODELING -->
@@ -712,33 +690,13 @@
             <h2>Inverse Modeling</h2>
 
             <p>
-              We estimate the model
-              <img
-                src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}"
-                alt="m"
-              />
-              by minimizing squared residuals. Because
-              <img
-                src="https://latex.codecogs.com/png.image?\dpi{110}g(\mathbf{m})"
-                alt="g(m)"
-              />
-              is nonlinear, we linearize around the current guess
-              <img
-                src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{m}^{(k)}"
-                alt="m^(k)"
-              />, solve a damped system for
-              <img
-                src="https://latex.codecogs.com/png.image?\dpi{110}\Delta\mathbf{m}"
-                alt="Delta m"
-              />, and iterate.
-            </p>
+      We compare observed vs predicted times, compute residuals, and update the model to reduce RMS.
+      Because the relationship is nonlinear, we linearize using the Jacobian.
+      Then we solve a <b>damped normal equation</b>.
+    </p>
 
             <p><b>Residuals and RMS</b></p>
-            <p style="margin: 4px 0 8px">
-              Residual = measured minus predicted; RMS = typical size of those
-              residuals. Smaller is better.
-            </p>
-
+     
             <div
               style="
                 display: block;
@@ -794,7 +752,7 @@
                   src="https://latex.codecogs.com/png.image?\dpi{110}\mathrm{RMS}(\mathbf{m})"
                   alt="RMS"
                 />
-                — root-mean-square misfit over all stations [s].
+                — root-mean-square error over all stations [s].
               </li>
               <li>
                 <img
@@ -806,10 +764,12 @@
             </ul>
 
             <p style="margin-top: 14px"><b>Linearization (Jacobian)</b></p>
-            <p style="margin: 4px 0 8px">
-              Approximate the nonlinear model by a straight line near the
-              current guess.
-            </p>
+            <p style="margin:4px 0 8px">
+  We simplify the curved (nonlinear) equations into a straight line (linear) equations.  
+  Each fraction just tells us how the predicted time at a station changes if we slightly
+  change one parameter (like x, y, z, t₀, or v).
+</p>
+
 
             <div
               style="
@@ -840,10 +800,7 @@
             </div>
 
             <ul style="margin: 0; padding-left: 18px">
-              <li>
-                Each fraction is a partial derivative showing how the predicted
-                time at station i changes if we nudge one parameter.
-              </li>
+             
               <li>
                 <img
                   src="https://latex.codecogs.com/png.image?\dpi{110}R_i"
@@ -866,55 +823,23 @@
             </ul>
 
             <p style="margin-top: 14px"><b>Whitening (by noise)</b></p>
-            <p style="margin: 4px 0 8px">
-              Scale data by their uncertainty so precise stations count more and
-              noisy ones count less—like measuring everything in its own “noise
-              units”.
+            <p style="margin:4px 0 8px">
+  We use one common noise level <b>σ</b> . So we just divide
+  both residuals and the Jacobian by σ. This means “measuring everything in units of its noise”.
+  
+</p>
             </p>
 
-            <div
-              style="
-                display: block;
-                max-width: min(760px, 92vw);
-                margin: 12px auto;
-                text-align: center;
-                line-height: 1.6;
-                overflow-wrap: anywhere;
-              "
-            >
-              <span class="eq" style="display: block">
-                <span
-                  class="math"
-                  style="
-                    display: inline-block;
-                    font-size: clamp(1.18rem, 0.98rem + 0.9vw, 1.85rem);
-                    font-weight: 400;
-                    letter-spacing: 0.02px;
-                  "
-                >
-                  <img
-                    src="https://latex.codecogs.com/png.image?\dpi{110}W=\Sigma^{-1/2},\qquad G_w=WG,\qquad\mathbf{d}_w=W\mathbf{r}"
-                    alt="whitening"
-                  />
-                </span>
-              </span>
-            </div>
+            <div style="text-align:center; margin:12px 0">
+  <img
+    src="https://latex.codecogs.com/png.image?\dpi{110}\mathbf{d}_w=\frac{\mathbf{d}}{\sigma},\qquad G_w=\frac{G}{\sigma}"
+    alt="simple whitening"
+    style="max-width:100%; height:auto"
+  />
+</div>
 
             <ul style="margin: 0; padding-left: 18px">
-              <li>
-                <img
-                  src="https://latex.codecogs.com/png.image?\dpi{110}\Sigma=\mathrm{diag}(\sigma_1^2,\dots,\sigma_N^2)"
-                  alt="Sigma"
-                />
-                — noise covariance (diagonal) from per-station spreads.
-              </li>
-              <li>
-                <img
-                  src="https://latex.codecogs.com/png.image?\dpi{110}W=\Sigma^{-1/2}"
-                  alt="W"
-                />
-                — whitening matrix (divide by noise stds).
-              </li>
+              
               <li>
                 <img
                   src="https://latex.codecogs.com/png.image?\dpi{110}G_w"
@@ -929,21 +854,34 @@
               </li>
               <li>
                 <img
-                  src="https://latex.codecogs.com/png.image?\dpi{110}\sigma_i"
+                  src="https://latex.codecogs.com/png.image?\dpi{110}\sigma"
                   alt="sigma_i"
                 />
-                — standard deviation of pick noise at station i [s].
+                — standard deviation of pick noise .
               </li>
             </ul>
 
             <p style="margin-top: 14px">
               <b>Tikhonov-damped normal equations</b>
             </p>
-            <p style="margin: 4px 0 8px">
+
+            <p>
+      We start with a rough guess of the earthquake’s location ( mean of all the stations coordinates represented by green dot in stations map ) and speed.
+      The experiment compares predicted times vs observed times, and the differences
+      are called residuals. The root-mean-square (RMS) of residuals tells us how
+      good the fit is. Smaller RMS = better fit.
+    </p>
+    <p>
+      To update the guess, we uses the Gauss–Newton method with damping (λ).
+      Damping means we don’t take too large steps, so the solution stays stable.
+      If λ is big, updates are slow but safe. If λ is small, updates are fast but
+      can wobble.
+    </p>
+            <!-- <p style="margin: 4px 0 8px">
               Solve for a safe update that balances fitting data and keeping
               steps stable; the damping value λ controls the safety vs. bias
               trade-off.
-            </p>
+            </p> -->
 
             <div
               style="
@@ -991,25 +929,41 @@
                   src="https://latex.codecogs.com/png.image?\dpi{110}\|\Delta\mathbf{m}\|"
                   alt="norm Delta m"
                 />
-                is tiny or RMS stops improving.
+                is tiny , RMS stops improving or you reached the max number of iterations.
               </li>
             </ul>
+
+            <!-- UNCERTAINTY ELLIPSE -->
+            <p style="margin-top: 14px"><b>Uncertainty Ellipse</b></p>
+  
+    <p>
+      After inversion we also estimate the uncertainty. This is shown as a yellow
+      ellipse around the final solution. It basically says “the true event is
+      most likely inside this area.” The ellipse size depends on how many
+      stations we have, how noisy the data are, and the damping value.
+    </p>
+    <ul style="margin:0; padding-left:18px">
+      <li>Big ellipse = not very certain (Possible Reasons : few stations, noisy data).</li>
+      <li>Small ellipse = more certain (good coverage).</li>
+      <!-- <li>Ellipse angle shows the week direction where solution is less constrained.</li> -->
+    </ul>
+  
           </div>
 
           <!-- 5) MISFIT MAP (2D scan) -->
           <div class="card">
             <h2>Misfit Map</h2>
-            <p>
-              We visualize how well different surface locations (x, y) at a
-              chosen depth z fit the data using a fixed assumed speed. At each
-              grid point we first pick the best origin time, then compute the
-              average squared mismatch to plot as a heatmap.
-            </p>
+           <p>
+      The misfit map is a heatmap that shows how well different (x, y) points
+      could explain the data at the same depth and fixed speed. For each map
+      location, the best origin time is calculated . Then we calculate
+      the RMS error there. Warm colors mean better fit, so the true event should
+      be near the warmest area.
+    </p>
 
             <p><b>Best origin time at each grid point</b></p>
             <p style="margin: 4px 0 8px">
-              For each map location, choose the origin time that best matches
-              the picks by averaging “observed minus travel-time”.
+              For each heatmap cell , we compute the best origin time by averaging “observed - travel-time”.
             </p>
 
             <div
@@ -1082,9 +1036,9 @@
               <b>Mean-squared misfit used for the map</b>
             </p>
             <p style="margin: 4px 0 8px">
-              With that best origin time, compute the average squared difference
-              between observed and predicted times; lower values mean a
-              better-fitting location.
+              With that best origin time, computing the average squared difference
+              between observed and predicted times ( lower values mean a
+              better-fitting location) .
             </p>
 
             <div
@@ -1107,8 +1061,12 @@
                     letter-spacing: 0.02px;
                   "
                 >
-                  <img
+                  <!-- <img
                     src="https://latex.codecogs.com/png.image?\dpi{110}J(x,y;z)=\frac{1}{N}\sum_{i=1}^{N}\left[t_i^{\mathrm{obs}}-\left(t_0^*(x,y;z)+\frac{R_i(x,y,z)}{v_{\mathrm{start}}}\right)\right]^2=\mathrm{Var}_i\!\left(t_i^{\mathrm{obs}}-\frac{R_i(x,y,z)}{v_{\mathrm{start}}}\right)"
+                    alt="J(x,y;z)"
+                  /> -->
+                    <img
+                    src="https://latex.codecogs.com/png.image?\dpi{110}J(x,y;z)=\frac{1}{N}\sum_{i=1}^{N}\left[t_i^{\mathrm{obs}}-\left(t_0^*(x,y;z)+\frac{R_i(x,y,z)}{v_{\mathrm{start}}}\right)\right]^2"
                     alt="J(x,y;z)"
                   />
                 </span>
@@ -1123,13 +1081,7 @@
                 />
                 — mean-squared misfit at the grid point (seconds<sup>2</sup>).
               </li>
-              <li>
-                <img
-                  src="https://latex.codecogs.com/png.image?\dpi{110}\mathrm{Var}_i(\cdot)"
-                  alt="Var_i"
-                />
-                — sample variance taken over stations i.
-              </li>
+
               <li>
                 Other symbols are the same as above:
                 <img
@@ -1150,28 +1102,22 @@
                 />.
               </li>
             </ul>
+<!-- CONVERGENCE PLOT -->
+<div class="card">
+  <h2>Convergence Plot</h2>
+  <p>
+    The convergence plot shows how the RMS error (average mismatch) changes with
+    each iteration of the inversion.  
+  </p>
+  <ul style="margin:0; padding-left:18px">
+    <li><b>X-axis:</b> iteration number (steps of the inversion).</li>
+    <li><b>Y-axis:</b> RMS error.</li>
+    <li><b>Trend:</b> RMS should go down as the solution improves.</li>
+    <li><b>Damping effect:</b> big λ = slow but stable, small λ = faster but may wobble.</li>
+  </ul>
+</div>
 
-            <ul style="margin-top: 12px">
-              <li>
-                <b>What it shows:</b> Low <em>J</em> marks candidate epicenters
-                for the chosen depth and assumed speed. In the map, warmer
-                colors mean lower misfit (better).
-              </li>
-              <li>
-                <b>Noise floor:</b> If the assumed speed and depth are correct
-                and the data noise has standard deviation σ, the minimum of
-                <em>J</em> should be near σ².
-              </li>
-              <li>
-                <b>Bias:</b> If the assumed speed differs from the true speed or
-                the depth is wrong, the low-misfit basin shifts away from the
-                true epicenter.
-              </li>
-              <li>
-                <b>Resolution controls:</b> Grid resolution (number of pixels),
-                display depth z, and the assumed speed.
-              </li>
-            </ul>
+            
           </div>
         </section>
       </div>
